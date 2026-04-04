@@ -4,3 +4,4 @@ venv/
 .env.local
 __pycache__/
 .DS_Store
+CLAUDE.md
