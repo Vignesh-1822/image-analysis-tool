@@ -1,12 +1,22 @@
+from contextlib import asynccontextmanager
+
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from dotenv import load_dotenv
 
 from routers import clip, color, parser, quality
+from services.clip import get_clip_model
 
 load_dotenv()
 
-app = FastAPI(title="Image Analysis Tool")
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    get_clip_model()
+    yield
+
+
+app = FastAPI(title="Image Analysis Tool", lifespan=lifespan)
 
 app.add_middleware(
     CORSMiddleware,

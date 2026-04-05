@@ -10,7 +10,7 @@ export async function analyzeImage(
   form.append('file', file)
   form.append('description', description)
 
-  const res = await fetch(`${BASE_URL}/analyze/clip`, {
+  const res = await fetch(`${BASE_URL}/api/analyze/clip`, {
     method: 'POST',
     body: form,
   })
@@ -24,7 +24,7 @@ export async function analyzeImage(
 }
 
 export async function parseDescription(description: string): Promise<ParsedDescription> {
-  const res = await fetch(`${BASE_URL}/parse-description`, {
+  const res = await fetch(`${BASE_URL}/api/parse-description`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ description }),
