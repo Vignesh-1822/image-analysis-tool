@@ -2,7 +2,7 @@ import type { CLIPAnalysisResult, ParsedDescription } from '@/types/analysis'
 
 const BASE_URL = 'http://localhost:8000'
 
-export async function analyzeImage(
+export async function analyzeWithClip(
   file: File,
   description: string
 ): Promise<CLIPAnalysisResult> {

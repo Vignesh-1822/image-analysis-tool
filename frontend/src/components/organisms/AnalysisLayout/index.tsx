@@ -6,6 +6,7 @@ interface AnalysisLayoutProps {
   file: File | null
   description: string
   isLoading: boolean
+  error: string | null
   onFileSelect: (file: File) => void
   onFileRemove: () => void
   onDescriptionChange: (val: string) => void
@@ -22,6 +23,7 @@ export function AnalysisLayout({
   file,
   description,
   isLoading,
+  error,
   onFileSelect,
   onFileRemove,
   onDescriptionChange,
@@ -57,6 +59,7 @@ export function AnalysisLayout({
               onDescriptionChange={onDescriptionChange}
               onAnalyze={onAnalyze}
               isLoading={isLoading}
+              error={error}
             />
 
             {/* Analysis Protocol — plain section, no card */}

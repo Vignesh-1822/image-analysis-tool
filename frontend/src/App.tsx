@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { Home } from '@/pages/Home'
 import { Results } from '@/pages/Results'
-import { analyzeImage } from '@/services/analysis'
+import { analyzeWithClip, parseDescription } from '@/services/analysis'
 import type { CLIPAnalysisResult, ParsedDescription } from '@/types/analysis'
 
 type Page = 'home' | 'results'
@@ -20,11 +20,14 @@ export default function App() {
     setIsLoading(true)
     setError(null)
     try {
-      const res = await analyzeImage(selectedFile, desc)
+      const [res, parsedDesc] = await Promise.all([
+        analyzeWithClip(selectedFile, desc),
+        parseDescription(desc),
+      ])
       setFile(selectedFile)
       setDescription(desc)
       setResult(res)
-      setParsed(null)
+      setParsed(parsedDesc)
       setPage('results')
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Analysis failed')

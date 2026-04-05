@@ -8,34 +8,46 @@ interface CLIPResultsTabProps {
   result: CLIPAnalysisResult
 }
 
-function ringConfig(score: number) {
-  if (score >= 75) return { colorClass: 'text-emerald-500', label: 'High Match' }
-  if (score >= 50) return { colorClass: 'text-amber-400', label: 'Partial Match' }
-  return { colorClass: 'text-[#C32032]', label: 'Low Match' }
+function ringConfig(score: number): { color: string; label: string } {
+  if (score >= 75) return { color: '#22c55e', label: 'High Match' }
+  if (score >= 50) return { color: '#f59e0b', label: 'Partial Match' }
+  return { color: '#C32032', label: 'Low Match' }
 }
 
 export function CLIPResultsTab({ result }: CLIPResultsTabProps) {
-  const similarityPct = Math.round(result.similarity_score * 100)
-  const { colorClass, label } = ringConfig(similarityPct)
+  // similarity_score is already 0–100 — no multiplication
+  const { color, label } = ringConfig(result.similarity_score)
 
   return (
-    <div className="grid grid-cols-2 gap-6 pt-2">
-      {/* Left: confidence ring + quality */}
-      <div>
-        <div className="flex justify-center py-4">
-          <ConfidenceRing score={similarityPct} label={label} colorClass={colorClass} />
+    <div className="flex flex-col gap-6 pt-2">
+
+      {/* Upper: ring left, cards right */}
+      <div className="grid grid-cols-2 gap-5">
+        <div className="flex flex-col items-center justify-center bg-gray-50 rounded-xl py-8 px-4">
+          <ConfidenceRing
+            score={result.similarity_score}
+            label={label}
+            color={color}
+          />
         </div>
+
+        <div className="flex flex-col gap-4">
+          <ProductIdentificationCard
+            productTypeDetected={result.product_type_detected}
+            confidence={result.product_type_confidence}
+          />
+          <SpecificationMatchCard result={result} />
+        </div>
+      </div>
+
+      {/* Lower: quality metrics row */}
+      <div>
+        <p className="text-[10px] font-bold uppercase tracking-widest text-gray-400 mb-3">
+          Image Quality Metrics
+        </p>
         <ImageQualityRow quality={result.quality} />
       </div>
 
-      {/* Right: identification + spec match */}
-      <div className="flex flex-col gap-4">
-        <ProductIdentificationCard
-          productTypeDetected={result.product_type_detected}
-          confidence={result.product_type_confidence}
-        />
-        <SpecificationMatchCard result={result} />
-      </div>
     </div>
   )
 }

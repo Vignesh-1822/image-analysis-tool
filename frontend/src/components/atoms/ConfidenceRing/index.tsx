@@ -1,42 +1,46 @@
 interface ConfidenceRingProps {
-  score: number // 0–100
-  label: string // e.g. "HIGH MATCH"
-  colorClass?: string // Tailwind stroke color override
+  score: number  // 0–100, already a percentage
+  label: string
+  color: string  // hex e.g. '#22c55e'
 }
 
-export function ConfidenceRing({ score, label, colorClass = 'text-emerald-500' }: ConfidenceRingProps) {
-  const radius = 54
-  const circumference = 2 * Math.PI * radius
-  const offset = circumference - (score / 100) * circumference
+const RADIUS = 70
+const CIRCUMFERENCE = 2 * Math.PI * RADIUS
+
+export function ConfidenceRing({ score, label, color }: ConfidenceRingProps) {
+  const offset = CIRCUMFERENCE - (score / 100) * CIRCUMFERENCE
 
   return (
     <div className="flex flex-col items-center gap-3">
-      <div className="relative w-36 h-36">
-        <svg className="w-full h-full -rotate-90" viewBox="0 0 128 128">
+      <div className="relative w-44 h-44">
+        <svg className="w-full h-full -rotate-90" viewBox="0 0 180 180">
           <circle
-            cx="64" cy="64" r={radius}
+            cx="90" cy="90" r={RADIUS}
             fill="none"
-            strokeWidth="10"
-            className="text-gray-100"
-            stroke="currentColor"
+            strokeWidth="13"
+            stroke="#f3f4f6"
           />
           <circle
-            cx="64" cy="64" r={radius}
+            cx="90" cy="90" r={RADIUS}
             fill="none"
-            strokeWidth="10"
+            strokeWidth="13"
             strokeLinecap="butt"
-            strokeDasharray={circumference}
+            strokeDasharray={CIRCUMFERENCE}
             strokeDashoffset={offset}
-            className={colorClass}
-            stroke="currentColor"
-            style={{ transition: 'stroke-dashoffset 0.5s ease' }}
+            stroke={color}
+            style={{ transition: 'stroke-dashoffset 0.6s ease' }}
           />
         </svg>
         <div className="absolute inset-0 flex flex-col items-center justify-center">
-          <span className="text-3xl font-bold text-gray-800">{score}%</span>
+          <span className="text-3xl font-bold text-gray-800">{score.toFixed(1)}%</span>
         </div>
       </div>
-      <span className="text-[10px] font-bold tracking-widest uppercase text-gray-500">{label}</span>
+      <span
+        className="text-[10px] font-bold tracking-widest uppercase px-3 py-1 rounded-full"
+        style={{ color, backgroundColor: `${color}18` }}
+      >
+        {label}
+      </span>
     </div>
   )
 }

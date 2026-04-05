@@ -7,13 +7,16 @@ interface SpecificationMatchCardProps {
 }
 
 export function SpecificationMatchCard({ result }: SpecificationMatchCardProps) {
-  const similarity = Math.round(result.similarity_score * 100)
+  // similarity_score is already a percentage (0–100) — no * 100
+  const similarity = result.similarity_score
   const isMatch = similarity >= 60
+  const barColor = isMatch ? 'bg-emerald-500' : similarity >= 40 ? 'bg-amber-400' : 'bg-[#C32032]'
+  const textColor = isMatch ? 'text-emerald-600' : 'text-[#C32032]'
   const comparison = result.color.comparison
 
   return (
-    <div className="border border-gray-200 bg-white border-l-4 border-l-[#004990]">
-      <div className="px-4 py-3 border-b border-gray-100 flex items-center gap-2">
+    <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
+      <div className="px-5 py-3.5 border-b border-gray-100 flex items-center gap-2">
         {isMatch ? (
           <CheckCircle className="w-3.5 h-3.5 text-emerald-500" />
         ) : (
@@ -24,30 +27,26 @@ export function SpecificationMatchCard({ result }: SpecificationMatchCardProps) 
         </span>
       </div>
 
-      <div className="px-4 py-4 flex flex-col gap-4">
-        {/* Text similarity */}
-        <div className="flex flex-col gap-1">
+      <div className="px-5 py-4 flex flex-col gap-4">
+        <div className="flex flex-col gap-1.5">
           <div className="flex items-center justify-between">
-            <span className="text-xs font-semibold text-gray-600">Visual-Text Similarity</span>
-            <span className={`text-xs font-bold ${isMatch ? 'text-emerald-600' : 'text-[#C32032]'}`}>
-              {similarity}%
-            </span>
+            <span className="text-xs text-gray-500 font-medium">Visual-Text Similarity</span>
+            <span className={`text-xs font-bold ${textColor}`}>{similarity.toFixed(1)}%</span>
           </div>
-          <div className="h-2 bg-gray-100 w-full">
+          <div className="h-2 bg-gray-100 rounded-full overflow-hidden">
             <div
-              className={`h-full transition-all duration-500 ${isMatch ? 'bg-emerald-500' : 'bg-[#C32032]'}`}
+              className={`h-full ${barColor} transition-all duration-500`}
               style={{ width: `${similarity}%` }}
             />
           </div>
-          <p className="text-xs text-gray-500 mt-0.5">
-            {isMatch ? `Matches spec` : 'Specification mismatch'}
+          <p className="text-[10px] text-gray-400">
+            {isMatch ? 'Matches specification' : 'Specification mismatch detected'}
           </p>
         </div>
 
-        {/* Color match */}
         {comparison && (
           <ColorValidationBar
-            matchScore={comparison.match_score * 100}
+            matchScore={comparison.match_score}
             extractedHex={comparison.extracted_hex}
             targetHex={comparison.target_hex}
             targetColorName={comparison.target_color_name}

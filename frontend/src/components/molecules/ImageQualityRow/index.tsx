@@ -5,16 +5,17 @@ interface ImageQualityRowProps {
   quality: QualityResult
 }
 
-export function ImageQualityRow({ quality }: ImageQualityRowProps) {
-  const resolutionLabel =
-    quality.resolution.width >= 3840
-      ? '4K Native'
-      : quality.resolution.width >= 1920
-      ? 'Full HD'
-      : `${quality.resolution.width}px`
+function resolutionLabel(width: number): string {
+  if (width >= 3840) return '4K Native'
+  if (width >= 2560) return 'QHD'
+  if (width >= 1920) return 'Full HD'
+  if (width >= 1280) return 'HD'
+  return `${width}px`
+}
 
+export function ImageQualityRow({ quality }: ImageQualityRowProps) {
   return (
-    <div className="flex gap-2 mt-4">
+    <div className="flex gap-3">
       <QualityMetricCard
         label="Sharpness"
         value={quality.blur.label}
@@ -22,7 +23,7 @@ export function ImageQualityRow({ quality }: ImageQualityRowProps) {
       />
       <QualityMetricCard
         label="Resolution"
-        value={resolutionLabel}
+        value={resolutionLabel(quality.resolution.width)}
         passed={quality.resolution.is_sufficient}
       />
       <QualityMetricCard
