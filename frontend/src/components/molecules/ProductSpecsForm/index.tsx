@@ -1,21 +1,16 @@
 import { ShieldCheck, Zap } from 'lucide-react'
 import { Button } from '@/components/ui/button'
-import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
 
 interface ProductSpecsFormProps {
-  modelName: string
   description: string
-  onModelNameChange: (val: string) => void
   onDescriptionChange: (val: string) => void
   onAnalyze: () => void
   isLoading: boolean
 }
 
 export function ProductSpecsForm({
-  modelName,
   description,
-  onModelNameChange,
   onDescriptionChange,
   onAnalyze,
   isLoading,

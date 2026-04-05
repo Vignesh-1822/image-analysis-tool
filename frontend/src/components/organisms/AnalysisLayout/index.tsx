@@ -4,12 +4,10 @@ import { StatsRow } from '@/components/molecules/StatsRow'
 
 interface AnalysisLayoutProps {
   file: File | null
-  modelName: string
   description: string
   isLoading: boolean
   onFileSelect: (file: File) => void
   onFileRemove: () => void
-  onModelNameChange: (val: string) => void
   onDescriptionChange: (val: string) => void
   onAnalyze: () => void
 }
@@ -22,12 +20,10 @@ const PROTOCOL_ITEMS = [
 
 export function AnalysisLayout({
   file,
-  modelName,
   description,
   isLoading,
   onFileSelect,
   onFileRemove,
-  onModelNameChange,
   onDescriptionChange,
   onAnalyze,
 }: AnalysisLayoutProps) {
@@ -57,9 +53,7 @@ export function AnalysisLayout({
           {/* Right: form + protocol — no card, just content */}
           <div className="col-span-2 flex flex-col gap-8">
             <ProductSpecsForm
-              modelName={modelName}
               description={description}
-              onModelNameChange={onModelNameChange}
               onDescriptionChange={onDescriptionChange}
               onAnalyze={onAnalyze}
               isLoading={isLoading}
