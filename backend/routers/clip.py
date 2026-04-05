@@ -1,0 +1,20 @@
+from fastapi import APIRouter, Form, HTTPException, UploadFile
+
+from models.clip import CLIPAnalysisResult
+from services.clip import analyze_with_clip
+from services.parser import parse_product_description
+
+router = APIRouter(prefix="/api", tags=["clip"])
+
+
+@router.post("/analyze/clip", response_model=CLIPAnalysisResult)
+async def analyze_clip(
+    file: UploadFile,
+    description: str = Form(...),
+) -> CLIPAnalysisResult:
+    image_bytes = await file.read()
+    parsed = parse_product_description(description)
+    try:
+        return analyze_with_clip(image_bytes, description, parsed)
+    except ValueError as exc:
+        raise HTTPException(status_code=422, detail=str(exc)) from exc
