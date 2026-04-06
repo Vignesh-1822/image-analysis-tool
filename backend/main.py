@@ -4,7 +4,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from dotenv import load_dotenv
 
-from routers import clip, color, parser, quality
+from routers import ai_model, clip, color, parser, quality
 from services.clip import get_clip_model
 
 load_dotenv()
@@ -29,6 +29,7 @@ app.include_router(parser.router)
 app.include_router(quality.router)
 app.include_router(color.router)
 app.include_router(clip.router)
+app.include_router(ai_model.router)
 
 
 @app.get("/health")
