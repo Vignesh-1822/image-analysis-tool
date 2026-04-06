@@ -7,8 +7,8 @@ interface SpecificationMatchCardProps {
 }
 
 export function SpecificationMatchCard({ result }: SpecificationMatchCardProps) {
-  // similarity_score is already a percentage (0–100) — no * 100
-  const similarity = result.similarity_score
+  // description_similarity_score: raw CLIP cosine similarity, 0-100
+  const similarity = result.description_similarity_score
   const isMatch = similarity >= 60
   const barColor = isMatch ? 'bg-emerald-500' : similarity >= 40 ? 'bg-amber-400' : 'bg-[#C32032]'
   const textColor = isMatch ? 'text-emerald-600' : 'text-[#C32032]'
@@ -44,14 +44,19 @@ export function SpecificationMatchCard({ result }: SpecificationMatchCardProps) 
           </p>
         </div>
 
-        {comparison && (
+        {comparison && comparison.match_score !== null && comparison.target_hex !== null ? (
           <ColorValidationBar
             matchScore={comparison.match_score}
             extractedHex={comparison.extracted_hex}
             targetHex={comparison.target_hex}
             targetColorName={comparison.target_color_name}
           />
-        )}
+        ) : comparison ? (
+          <div className="flex flex-col gap-1">
+            <span className="text-xs text-gray-500 font-medium uppercase tracking-wider">Color Match</span>
+            <p className="text-xs text-gray-400 italic">{comparison.match_label}</p>
+          </div>
+        ) : null}
       </div>
     </div>
   )

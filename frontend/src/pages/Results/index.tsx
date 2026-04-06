@@ -70,7 +70,7 @@ export function Results({ file, description, parsed, result, onUploadNew, onReAn
 
       {/* Verdict banner — sticky to bottom */}
       <div className="sticky bottom-0">
-        <VerdictBanner verdict={result.verdict} verdictReason={result.verdict_reason} />
+        <VerdictBanner verdict={result.verdict} verdictNote={result.verdict_note} />
       </div>
     </div>
   )

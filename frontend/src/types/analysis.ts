@@ -44,11 +44,18 @@ export interface DominantColor {
 
 export interface ColorComparisonResult {
   extracted_hex: string
-  target_hex: string
+  target_hex: string | null
   target_color_name: string
-  delta_e: number
-  match_score: number
+  delta_e: number | null
+  match_score: number | null
   match_label: string
+  resolution_method: string
+  parsed_color: Record<string, unknown>
+  tolerance_used: number
+  cluster_scores: Record<string, unknown>[]
+  expected_category: string
+  num_variations: number
+  clusters_filtered: number
 }
 
 export interface ColorAnalysisResult {
@@ -56,14 +63,30 @@ export interface ColorAnalysisResult {
   comparison: ColorComparisonResult | null
 }
 
+export interface ScoreComponent {
+  score: number
+  weight: number
+  contribution: number
+}
+
+export interface ScoreBreakdown {
+  product_type: ScoreComponent
+  color_match: ScoreComponent | null
+  image_quality: ScoreComponent
+  description_similarity: ScoreComponent
+}
+
 export interface CLIPAnalysisResult {
-  similarity_score: number
+  composite_score: number
+  score_breakdown: ScoreBreakdown
   product_type_detected: string
   product_type_confidence: number
+  product_type_match: boolean
+  description_similarity_score: number
   quality: QualityResult
   color: ColorAnalysisResult
   verdict: string
-  verdict_reason: string
+  verdict_note: string
   model_used: string
   processing_time_ms: number
 }

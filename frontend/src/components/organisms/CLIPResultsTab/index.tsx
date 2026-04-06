@@ -15,8 +15,8 @@ function ringConfig(score: number): { color: string; label: string } {
 }
 
 export function CLIPResultsTab({ result }: CLIPResultsTabProps) {
-  // similarity_score is already 0–100 — no multiplication
-  const { color, label } = ringConfig(result.similarity_score)
+  // composite_score is the main 0-100 number driving the ring
+  const { color, label } = ringConfig(result.composite_score)
 
   return (
     <div className="flex flex-col gap-6 pt-2">
@@ -25,7 +25,7 @@ export function CLIPResultsTab({ result }: CLIPResultsTabProps) {
       <div className="grid grid-cols-2 gap-5">
         <div className="flex flex-col items-center justify-center bg-gray-50 rounded-xl py-8 px-4">
           <ConfidenceRing
-            score={result.similarity_score}
+            score={result.composite_score}
             label={label}
             color={color}
           />

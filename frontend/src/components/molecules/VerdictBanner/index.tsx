@@ -3,7 +3,7 @@ import { Button } from '@/components/ui/button'
 
 interface VerdictBannerProps {
   verdict: string
-  verdictReason: string
+  verdictNote: string
 }
 
 function verdictConfig(verdict: string) {
@@ -29,7 +29,7 @@ function verdictConfig(verdict: string) {
   }
 }
 
-export function VerdictBanner({ verdict, verdictReason }: VerdictBannerProps) {
+export function VerdictBanner({ verdict, verdictNote }: VerdictBannerProps) {
   const { bg, icon, title } = verdictConfig(verdict)
 
   return (
@@ -38,7 +38,7 @@ export function VerdictBanner({ verdict, verdictReason }: VerdictBannerProps) {
         {icon}
         <div>
           <p className="text-white font-bold text-base tracking-wide">{title}</p>
-          <p className="text-white/80 text-xs mt-0.5">{verdictReason}</p>
+          <p className="text-white/80 text-xs mt-0.5">{verdictNote}</p>
         </div>
       </div>
       <div className="flex items-center gap-3">
