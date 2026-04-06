@@ -73,7 +73,6 @@ export interface ScoreBreakdown {
   product_type: ScoreComponent
   color_match: ScoreComponent | null
   image_quality: ScoreComponent
-  description_similarity: ScoreComponent
 }
 
 export interface CLIPAnalysisResult {
@@ -82,7 +81,6 @@ export interface CLIPAnalysisResult {
   product_type_detected: string
   product_type_confidence: number
   product_type_match: boolean
-  description_similarity_score: number
   quality: QualityResult
   color: ColorAnalysisResult
   verdict: string

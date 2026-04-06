@@ -14,19 +14,17 @@ class ScoreBreakdown(BaseModel):
     product_type: ScoreComponent
     color_match: ScoreComponent | None = None
     image_quality: ScoreComponent
-    description_similarity: ScoreComponent
 
 
 class CLIPAnalysisResult(BaseModel):
-    composite_score: float                  # main confidence ring number (0-100)
-    score_breakdown: ScoreBreakdown         # per-component breakdown for tooltip
+    composite_score: float           # main confidence ring number (0-100)
+    score_breakdown: ScoreBreakdown
     product_type_detected: str
-    product_type_confidence: float          # 0-100
+    product_type_confidence: float   # 0-100
     product_type_match: bool
-    description_similarity_score: float     # raw CLIP cosine similarity (0-100)
     quality: QualityResult
     color: ColorAnalysisResult
-    verdict: str                            # Approved / Catalog Only / Replace
-    verdict_note: str                       # smart contextual message
+    verdict: str                     # Approved / Catalog Only / Replace
+    verdict_note: str
     model_used: str
     processing_time_ms: float

@@ -7,11 +7,11 @@ interface SpecificationMatchCardProps {
 }
 
 export function SpecificationMatchCard({ result }: SpecificationMatchCardProps) {
-  // description_similarity_score: raw CLIP cosine similarity, 0-100
-  const similarity = result.description_similarity_score
-  const isMatch = similarity >= 60
-  const barColor = isMatch ? 'bg-emerald-500' : similarity >= 40 ? 'bg-amber-400' : 'bg-[#C32032]'
-  const textColor = isMatch ? 'text-emerald-600' : 'text-[#C32032]'
+  // composite_score is the overall weighted match (0-100)
+  const similarity = result.composite_score
+  const isMatch = similarity >= 75
+  const barColor = isMatch ? 'bg-emerald-500' : similarity >= 50 ? 'bg-amber-400' : 'bg-[#C32032]'
+  const textColor = isMatch ? 'text-emerald-600' : similarity >= 50 ? 'text-amber-600' : 'text-[#C32032]'
   const comparison = result.color.comparison
 
   return (
@@ -30,7 +30,7 @@ export function SpecificationMatchCard({ result }: SpecificationMatchCardProps) 
       <div className="px-5 py-4 flex flex-col gap-4">
         <div className="flex flex-col gap-1.5">
           <div className="flex items-center justify-between">
-            <span className="text-xs text-gray-500 font-medium">Visual-Text Similarity</span>
+            <span className="text-xs text-gray-500 font-medium">Overall Match Score</span>
             <span className={`text-xs font-bold ${textColor}`}>{similarity.toFixed(1)}%</span>
           </div>
           <div className="h-2 bg-gray-100 rounded-full overflow-hidden">
@@ -40,7 +40,7 @@ export function SpecificationMatchCard({ result }: SpecificationMatchCardProps) 
             />
           </div>
           <p className="text-[10px] text-gray-400">
-            {isMatch ? 'Matches specification' : 'Specification mismatch detected'}
+            {isMatch ? 'Meets specification criteria' : similarity >= 50 ? 'Partial specification match' : 'Does not meet specification'}
           </p>
         </div>
 

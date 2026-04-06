@@ -37,7 +37,6 @@ LABEL_MAP: dict[str, str] = {
     "concrete surface":                    "non-product",
 }
 
-# Product type groups for match checking
 _SHINGLE_TYPES = {"architectural shingle", "3-tab shingle", "ridge cap"}
 _PRODUCT_TYPE_GROUPS: dict[str, set[str]] = {
     "shingle":               _SHINGLE_TYPES,
@@ -56,21 +55,6 @@ def get_clip_model() -> tuple[CLIPModel, CLIPProcessor]:
         _model = CLIPModel.from_pretrained(MODEL_NAME)
         _model.eval()
     return _model, _processor
-
-
-def compute_similarity(image_bytes: bytes, description: str) -> float:
-    """CLIP cosine similarity between image and text description, 0-100."""
-    model, processor = get_clip_model()
-    image = Image.open(io.BytesIO(image_bytes)).convert("RGB")
-    inputs = processor(text=[description], images=image, return_tensors="pt", padding=True)
-
-    with torch.no_grad():
-        outputs = model(**inputs)
-
-    img_emb = outputs.image_embeds / outputs.image_embeds.norm(dim=-1, keepdim=True)
-    txt_emb = outputs.text_embeds / outputs.text_embeds.norm(dim=-1, keepdim=True)
-    similarity = (img_emb @ txt_emb.T).item()
-    return round(max(0.0, similarity) * 100, 2)
 
 
 def classify_product_type(image_bytes: bytes) -> dict[str, str | float]:
@@ -97,13 +81,12 @@ def _product_type_match(
     parsed: ParsedDescription,
 ) -> tuple[bool, float]:
     """
-    Returns (is_match, match_score).
-    - If description has no product_type, confidence is used as-is.
-    - If types align → match_score = confidence.
-    - If they conflict → match_score = 100 - confidence (penalise).
+    Returns (is_match, product_type_score).
+    Match → fixed score of 80.
+    Mismatch → max(0, 100 - confidence) to penalise high-confidence wrong detections.
     """
     if parsed.product_type == "unknown":
-        return True, detected_confidence
+        return True, 80.0
 
     pt = parsed.product_type.lower()
     detected = detected_label.lower()
@@ -115,12 +98,11 @@ def _product_type_match(
             break
 
     if expected_group is None:
-        return True, detected_confidence
+        return True, 80.0
 
     if detected in expected_group:
-        return True, detected_confidence
+        return True, 80.0
 
-    # Detected type conflicts with description
     return False, round(max(0.0, 100.0 - detected_confidence), 2)
 
 
@@ -150,14 +132,9 @@ def _build_verdict_note(
                 "Good match — image quality is limiting. "
                 "Consider a higher resolution capture."
             )
-        if lowest == "product_type":
-            return (
-                "Good match — product type confidence is moderate. "
-                "Manual verification recommended."
-            )
         return (
-            "Good match — description alignment is low. "
-            "Ensure the description matches this specific product."
+            "Good match — product type confidence is moderate. "
+            "Manual verification recommended."
         )
 
     if composite >= 50:
@@ -171,14 +148,9 @@ def _build_verdict_note(
                 "Partial match — significant color mismatch detected. "
                 "Verify this is the correct color variant."
             )
-        if lowest == "image_quality":
-            return (
-                "Partial match — image quality is too low for reliable analysis. "
-                "Replace with a higher quality image."
-            )
         return (
-            f"Partial match — {lowest.replace('_', ' ')} score is low ({valid[lowest]:.0f}%). "
-            "Manual review recommended."
+            "Partial match — image quality is too low for reliable analysis. "
+            "Replace with a higher quality image."
         )
 
     return (
@@ -198,55 +170,52 @@ def analyze_with_clip(
 ) -> CLIPAnalysisResult:
     start = time.time()
 
-    # ── Step 1-2: CLIP similarity + product type ──────────────────────────────
-    description_similarity = compute_similarity(image_bytes, description)
+    # ── Step 1: CLIP zero-shot product type classification ────────────────────
     pt_result = classify_product_type(image_bytes)
     product_type_detected = str(pt_result["label"])
     product_type_confidence = float(pt_result["confidence"])
 
-    is_match, pt_match_score = _product_type_match(
+    is_match, pt_score = _product_type_match(
         product_type_detected, product_type_confidence, parsed_description
     )
 
-    # ── Step 3-4: Quality + color ─────────────────────────────────────────────
+    # ── Step 2: Image quality ─────────────────────────────────────────────────
     quality = analyze_image_quality(image_bytes)
+    quality_score = quality.overall_score
+
+    # ── Step 3: Color extraction and matching ─────────────────────────────────
     color = analyze_image_color(image_bytes, target_color_name=parsed_description.color)
 
-    # ── Step 5: Determine color_match_score ───────────────────────────────────
-    color_match_score: float | None = None
+    color_score: float | None = None
     if color.comparison is not None and color.comparison.match_score is not None:
-        color_match_score = color.comparison.match_score
+        color_score = color.comparison.match_score
 
-    # ── Step 6: Composite score ───────────────────────────────────────────────
-    if color_match_score is not None:
+    # ── Step 4: Composite score ───────────────────────────────────────────────
+    if color_score is not None:
         composite = round(
-            pt_match_score       * 0.35 +
-            color_match_score    * 0.30 +
-            quality.overall_score * 0.20 +
-            description_similarity * 0.15,
+            pt_score     * 0.40 +
+            color_score  * 0.35 +
+            quality_score * 0.25,
             1,
         )
         breakdown = ScoreBreakdown(
-            product_type=_component(pt_match_score, 0.35),
-            color_match=_component(color_match_score, 0.30),
-            image_quality=_component(quality.overall_score, 0.20),
-            description_similarity=_component(description_similarity, 0.15),
+            product_type=_component(pt_score, 0.40),
+            color_match=_component(color_score, 0.35),
+            image_quality=_component(quality_score, 0.25),
         )
     else:
         composite = round(
-            pt_match_score        * 0.45 +
-            quality.overall_score * 0.30 +
-            description_similarity * 0.25,
+            pt_score      * 0.55 +
+            quality_score * 0.45,
             1,
         )
         breakdown = ScoreBreakdown(
-            product_type=_component(pt_match_score, 0.45),
+            product_type=_component(pt_score, 0.55),
             color_match=None,
-            image_quality=_component(quality.overall_score, 0.30),
-            description_similarity=_component(description_similarity, 0.25),
+            image_quality=_component(quality_score, 0.45),
         )
 
-    # ── Step 7: Verdict ───────────────────────────────────────────────────────
+    # ── Verdict ───────────────────────────────────────────────────────────────
     if composite >= 75:
         verdict = "Approved"
     elif composite >= 50:
@@ -254,12 +223,11 @@ def analyze_with_clip(
     else:
         verdict = "Replace"
 
-    # ── Step 8: Verdict note (lowest component drives the message) ────────────
+    # ── Verdict note ──────────────────────────────────────────────────────────
     component_scores: dict[str, float | None] = {
-        "product_type":           pt_match_score,
-        "color_match":            color_match_score,
-        "image_quality":          quality.overall_score,
-        "description_similarity": description_similarity,
+        "product_type": pt_score,
+        "color_match":  color_score,
+        "image_quality": quality_score,
     }
     extracted_hex = color.dominant_colors[0].hex if color.dominant_colors else None
     verdict_note = _build_verdict_note(
@@ -274,7 +242,6 @@ def analyze_with_clip(
         product_type_detected=product_type_detected,
         product_type_confidence=product_type_confidence,
         product_type_match=is_match,
-        description_similarity_score=description_similarity,
         quality=quality,
         color=color,
         verdict=verdict,
