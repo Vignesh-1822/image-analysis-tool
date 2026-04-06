@@ -1,19 +1,18 @@
-import { CheckCircle, XCircle } from 'lucide-react'
+import type { ReactNode } from 'react'
 
 interface QualityMetricCardProps {
   label: string
   value: string
   passed: boolean
+  icon: ReactNode
 }
 
-export function QualityMetricCard({ label, value, passed }: QualityMetricCardProps) {
+export function QualityMetricCard({ label, value, passed, icon }: QualityMetricCardProps) {
   return (
-    <div className="flex flex-col items-center gap-2 py-4 px-3 bg-white rounded-xl shadow-sm border border-gray-100 flex-1">
-      {passed ? (
-        <CheckCircle className="w-5 h-5 text-emerald-500" />
-      ) : (
-        <XCircle className="w-5 h-5 text-[#C32032]" />
-      )}
+    <div className={`flex flex-col items-center gap-2 py-4 px-3 bg-white border flex-1 ${passed ? 'border-gray-100' : 'border-red-100'}`}>
+      <div className={`${passed ? 'text-emerald-500' : 'text-[#C32032]'}`}>
+        {icon}
+      </div>
       <span className="text-sm font-bold text-gray-800">{value}</span>
       <span className="text-[10px] text-gray-400 uppercase tracking-wider font-semibold text-center">{label}</span>
     </div>

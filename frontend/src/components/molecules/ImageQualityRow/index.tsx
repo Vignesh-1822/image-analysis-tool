@@ -1,3 +1,4 @@
+import { Eye, Monitor, Crosshair } from 'lucide-react'
 import { QualityMetricCard } from '@/components/atoms/QualityMetricCard'
 import type { QualityResult } from '@/types/analysis'
 
@@ -20,16 +21,19 @@ export function ImageQualityRow({ quality }: ImageQualityRowProps) {
         label="Sharpness"
         value={quality.blur.label}
         passed={!quality.blur.is_blurry}
+        icon={<Eye className="w-5 h-5" />}
       />
       <QualityMetricCard
         label="Resolution"
         value={resolutionLabel(quality.resolution.width)}
         passed={quality.resolution.is_sufficient}
+        icon={<Monitor className="w-5 h-5" />}
       />
       <QualityMetricCard
         label="Framing"
         value={quality.framing.label}
         passed={quality.framing.is_centered}
+        icon={<Crosshair className="w-5 h-5" />}
       />
     </div>
   )

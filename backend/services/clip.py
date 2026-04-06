@@ -20,31 +20,32 @@ CANDIDATE_LABELS = [
     "3-tab shingle roof material",
     "ridge cap roofing",
     "metal roof flashing",
-    "roof underlayment",
     "wood siding panel",
-    "brick wall",
     "concrete surface",
+    "brick wall",
+    "non-product",
 ]
 
-LABEL_MAP: dict[str, str] = {
-    "architectural shingle roof material": "architectural shingle",
-    "3-tab shingle roof material":         "3-tab shingle",
-    "ridge cap roofing":                   "ridge cap",
-    "metal roof flashing":                 "metal flashing",
-    "roof underlayment":                   "underlayment",
-    "wood siding panel":                   "non-product",
-    "brick wall":                          "non-product",
-    "concrete surface":                    "non-product",
+# Maps CLIP candidate label → clean display name
+_LABEL_DISPLAY: dict[str, str] = {
+    "architectural shingle roof material": "Shingle",
+    "3-tab shingle roof material":         "Shingle",
+    "ridge cap roofing":                   "Ridge Cap",
+    "metal roof flashing":                 "Metal Flashing",
+    "wood siding panel":                   "Siding",
+    "concrete surface":                    "Concrete",
+    "brick wall":                          "Brick",
+    "non-product":                         "Non-product",
 }
 
-_SHINGLE_TYPES = {"architectural shingle", "3-tab shingle", "ridge cap"}
-_PRODUCT_TYPE_GROUPS: dict[str, set[str]] = {
-    "shingle":               _SHINGLE_TYPES,
-    "architectural shingle": {"architectural shingle"},
-    "3-tab shingle":         {"3-tab shingle"},
-    "ridge cap":             {"ridge cap"},
-    "flashing":              {"metal flashing"},
-    "underlayment":          {"underlayment"},
+# Maps parsed_description.product_type → clean display name (None = unknown)
+_PARSED_TYPE_DISPLAY: dict[str, str | None] = {
+    "architectural_shingle": "Shingle",
+    "3tab_shingle":          "Shingle",
+    "ridge_cap":             "Ridge Cap",
+    "metal_flashing":        "Metal Flashing",
+    "underlayment":          "Underlayment",
+    "unknown":               None,
 }
 
 
@@ -57,8 +58,11 @@ def get_clip_model() -> tuple[CLIPModel, CLIPProcessor]:
     return _model, _processor
 
 
-def classify_product_type(image_bytes: bytes) -> dict[str, str | float]:
-    """Zero-shot CLIP classification against candidate roofing product labels."""
+def classify_product_type(
+    image_bytes: bytes,
+    parsed: ParsedDescription,
+) -> dict[str, object]:
+    """Zero-shot CLIP classification with confidence-threshold match logic."""
     model, processor = get_clip_model()
     image = Image.open(io.BytesIO(image_bytes)).convert("RGB")
     inputs = processor(text=CANDIDATE_LABELS, images=image, return_tensors="pt", padding=True)
@@ -68,42 +72,29 @@ def classify_product_type(image_bytes: bytes) -> dict[str, str | float]:
 
     probs = outputs.logits_per_image.softmax(dim=-1)[0]
     best_idx = int(probs.argmax().item())
+    winning_label = CANDIDATE_LABELS[best_idx]
+    winning_confidence = round(float(probs[best_idx]) * 100, 2)
+
+    detected_display = _LABEL_DISPLAY[winning_label]
+    expected_display = _PARSED_TYPE_DISPLAY.get(parsed.product_type)
+
+    if winning_confidence >= 50:
+        if detected_display == expected_display or expected_display is None:
+            is_match = True
+            score = 80.0
+        else:
+            is_match = False
+            score = 20.0
+    else:
+        is_match = False
+        score = 45.0
 
     return {
-        "label": LABEL_MAP[CANDIDATE_LABELS[best_idx]],
-        "confidence": round(float(probs[best_idx]) * 100, 2),
+        "detected_type": detected_display,
+        "confidence": winning_confidence,
+        "product_type_match": is_match,
+        "product_type_score": score,
     }
-
-
-def _product_type_match(
-    detected_label: str,
-    detected_confidence: float,
-    parsed: ParsedDescription,
-) -> tuple[bool, float]:
-    """
-    Returns (is_match, product_type_score).
-    Match → fixed score of 80.
-    Mismatch → max(0, 100 - confidence) to penalise high-confidence wrong detections.
-    """
-    if parsed.product_type == "unknown":
-        return True, 80.0
-
-    pt = parsed.product_type.lower()
-    detected = detected_label.lower()
-
-    expected_group: set[str] | None = None
-    for key, group in _PRODUCT_TYPE_GROUPS.items():
-        if key in pt or pt in key:
-            expected_group = group
-            break
-
-    if expected_group is None:
-        return True, 80.0
-
-    if detected in expected_group:
-        return True, 80.0
-
-    return False, round(max(0.0, 100.0 - detected_confidence), 2)
 
 
 def _build_verdict_note(
@@ -122,6 +113,8 @@ def _build_verdict_note(
         return "Strong match — image meets all specification criteria."
 
     if composite >= 75:
+        if valid[lowest] >= 60:
+            return "Good match — all criteria met satisfactorily."
         if lowest == "color_match":
             return (
                 f"Good match — color variance detected. "
@@ -171,13 +164,11 @@ def analyze_with_clip(
     start = time.time()
 
     # ── Step 1: CLIP zero-shot product type classification ────────────────────
-    pt_result = classify_product_type(image_bytes)
-    product_type_detected = str(pt_result["label"])
+    pt_result = classify_product_type(image_bytes, parsed_description)
+    product_type_detected = str(pt_result["detected_type"])
     product_type_confidence = float(pt_result["confidence"])
-
-    is_match, pt_score = _product_type_match(
-        product_type_detected, product_type_confidence, parsed_description
-    )
+    is_match = bool(pt_result["product_type_match"])
+    pt_score = float(pt_result["product_type_score"])
 
     # ── Step 2: Image quality ─────────────────────────────────────────────────
     quality = analyze_image_quality(image_bytes)
@@ -240,7 +231,6 @@ def analyze_with_clip(
         composite_score=composite,
         score_breakdown=breakdown,
         product_type_detected=product_type_detected,
-        product_type_confidence=product_type_confidence,
         product_type_match=is_match,
         quality=quality,
         color=color,

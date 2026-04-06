@@ -2,7 +2,6 @@ import { useMemo } from 'react'
 import { Navbar } from '@/components/organisms/Navbar'
 import { ResultsImagePanel } from '@/components/organisms/ResultsImagePanel'
 import { ResultsTabs } from '@/components/organisms/ResultsTabs'
-import { VerdictBanner } from '@/components/molecules/VerdictBanner'
 import type { CLIPAnalysisResult, ParsedDescription } from '@/types/analysis'
 
 interface ResultsProps {
@@ -32,9 +31,6 @@ export function Results({ file, description, parsed, result, onUploadNew, onReAn
           Workflow: Analysis Results
         </p>
         <h1 className="text-3xl font-bold text-[#004990] mb-1">Validation Report</h1>
-        <p className="text-sm text-gray-400 mb-8">
-          AI-generated audit results for the uploaded roofing product image.
-        </p>
 
         <div className="grid grid-cols-5 gap-8 items-start">
           {/* Left: image + description + buttons */}
@@ -68,10 +64,6 @@ export function Results({ file, description, parsed, result, onUploadNew, onReAn
         </span>
       </div>
 
-      {/* Verdict banner — sticky to bottom */}
-      <div className="sticky bottom-0">
-        <VerdictBanner verdict={result.verdict} verdictNote={result.verdict_note} />
-      </div>
     </div>
   )
 }

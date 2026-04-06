@@ -79,7 +79,6 @@ export interface CLIPAnalysisResult {
   composite_score: number
   score_breakdown: ScoreBreakdown
   product_type_detected: string
-  product_type_confidence: number
   product_type_match: boolean
   quality: QualityResult
   color: ColorAnalysisResult

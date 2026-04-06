@@ -1,43 +1,29 @@
-import { CheckCircle } from 'lucide-react'
+import { CheckCircle, XCircle } from 'lucide-react'
 
 interface ProductIdentificationCardProps {
-  productTypeDetected: string
-  confidence: number  // 0–100, already a percentage
+  isMatch: boolean
+  detectedType: string
 }
 
-export function ProductIdentificationCard({
-  productTypeDetected,
-  confidence,
-}: ProductIdentificationCardProps) {
+export function ProductIdentificationCard({ isMatch, detectedType }: ProductIdentificationCardProps) {
   return (
-    <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
-      <div className="px-5 py-3.5 border-b border-gray-100 flex items-center gap-2">
-        <CheckCircle className="w-3.5 h-3.5 text-emerald-500" />
+    <div className={`border overflow-hidden ${isMatch ? 'bg-green-50 border-green-200' : 'bg-red-50 border-red-200'}`}>
+      <div className={`px-5 py-3.5 border-b flex items-center justify-between ${isMatch ? 'border-green-200' : 'border-red-200'}`}>
         <span className="text-[10px] font-bold uppercase tracking-widest text-gray-400">
           Product Identification
         </span>
+        {isMatch ? (
+          <CheckCircle className="w-3.5 h-3.5 text-green-600" />
+        ) : (
+          <XCircle className="w-3.5 h-3.5 text-red-600" />
+        )}
       </div>
 
-      <div className="px-5 py-4 flex flex-col gap-3">
-        <div>
-          <p className="text-sm font-bold text-gray-800 capitalize">{productTypeDetected}</p>
-          <p className="text-[10px] text-gray-400 uppercase tracking-wider font-semibold mt-0.5">
-            Validated Product
-          </p>
-        </div>
-
-        <div className="pt-3 border-t border-gray-100">
-          <div className="flex items-center justify-between mb-1.5">
-            <span className="text-xs text-gray-500">Detection Confidence</span>
-            <span className="text-xs font-bold text-gray-800">{confidence.toFixed(1)}%</span>
-          </div>
-          <div className="h-1.5 bg-gray-100 rounded-full overflow-hidden">
-            <div
-              className="h-full bg-[#004990] rounded-full transition-all duration-500"
-              style={{ width: `${confidence}%` }}
-            />
-          </div>
-        </div>
+      <div className="px-5 py-4 flex items-center gap-3">
+        <div className={`w-2.5 h-2.5 rounded-full flex-shrink-0 ${isMatch ? 'bg-green-500' : 'bg-red-500'}`} />
+        <p className={`text-sm font-semibold ${isMatch ? 'text-green-700' : 'text-red-700'}`}>
+          {isMatch ? 'Validated product type' : 'Not validated product type'}: {detectedType}
+        </p>
       </div>
     </div>
   )
