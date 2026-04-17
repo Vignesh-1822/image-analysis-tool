@@ -1,4 +1,4 @@
-import type { CLIPAnalysisResult, ParsedDescription } from '@/types/analysis'
+import type { AIModelAnalysisResult, CLIPAnalysisResult, ParsedDescription } from '@/types/analysis'
 
 const BASE_URL = 'http://localhost:8000'
 
@@ -21,6 +21,27 @@ export async function analyzeWithClip(
   }
 
   return res.json() as Promise<CLIPAnalysisResult>
+}
+
+export async function analyzeWithAI(
+  file: File,
+  description: string
+): Promise<AIModelAnalysisResult> {
+  const form = new FormData()
+  form.append('file', file)
+  form.append('description', description)
+
+  const res = await fetch(`${BASE_URL}/api/analyze/ai-model`, {
+    method: 'POST',
+    body: form,
+  })
+
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({ detail: 'Unknown error' }))
+    throw new Error(err.detail ?? `HTTP ${res.status}`)
+  }
+
+  return res.json() as Promise<AIModelAnalysisResult>
 }
 
 export async function parseDescription(description: string): Promise<ParsedDescription> {

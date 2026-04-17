@@ -2,19 +2,19 @@ import { useMemo } from 'react'
 import { Navbar } from '@/components/organisms/Navbar'
 import { ResultsImagePanel } from '@/components/organisms/ResultsImagePanel'
 import { ResultsTabs } from '@/components/organisms/ResultsTabs'
-import type { CLIPAnalysisResult, ParsedDescription } from '@/types/analysis'
+import type { AIModelAnalysisResult, CLIPAnalysisResult, ParsedDescription } from '@/types/analysis'
 
 interface ResultsProps {
   file: File
   description: string
   parsed: ParsedDescription | null
   result: CLIPAnalysisResult
+  aiResult: AIModelAnalysisResult | null
   onUploadNew: () => void
   onReAnalyze: () => void
 }
 
-export function Results({ file, description, parsed, result, onUploadNew, onReAnalyze }: ResultsProps) {
-  // Stable ref ID — only computed once per file
+export function Results({ file, description, parsed, result, aiResult, onUploadNew, onReAnalyze }: ResultsProps) {
   const refId = useMemo(() => {
     const ts = Date.now().toString(36).toUpperCase()
     const name = file.name.replace(/\.[^.]+$/, '').slice(0, 4).toUpperCase()
@@ -26,14 +26,12 @@ export function Results({ file, description, parsed, result, onUploadNew, onReAn
       <Navbar />
 
       <main className="flex-1 max-w-7xl w-full mx-auto px-8 py-10">
-        {/* Page header */}
         <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1">
           Workflow: Analysis Results
         </p>
         <h1 className="text-3xl font-bold text-[#004990] mb-1">Validation Report</h1>
 
         <div className="grid grid-cols-5 gap-8 items-start">
-          {/* Left: image + description + buttons */}
           <div className="col-span-2">
             <ResultsImagePanel
               file={file}
@@ -46,14 +44,12 @@ export function Results({ file, description, parsed, result, onUploadNew, onReAn
             />
           </div>
 
-          {/* Right: analysis tabs */}
           <div className="col-span-3">
-            <ResultsTabs clipResult={result} />
+            <ResultsTabs clipResult={result} aiResult={aiResult} />
           </div>
         </div>
       </main>
 
-      {/* Model metadata */}
       <div className="max-w-7xl w-full mx-auto px-8 py-2 flex items-center gap-3">
         <span className="text-[10px] text-gray-400">
           Model: <span className="font-semibold text-gray-500">{result.model_used}</span>
@@ -63,7 +59,6 @@ export function Results({ file, description, parsed, result, onUploadNew, onReAn
           Processing: <span className="font-semibold text-gray-500">{result.processing_time_ms.toFixed(0)} ms</span>
         </span>
       </div>
-
     </div>
   )
 }

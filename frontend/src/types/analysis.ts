@@ -75,6 +75,34 @@ export interface ScoreBreakdown {
   image_quality: ScoreComponent
 }
 
+export interface AIScoreBreakdown {
+  ai_analysis: ScoreComponent
+  color_match: ScoreComponent | null
+  image_quality: ScoreComponent
+}
+
+export interface AIModelAnalysisResult {
+  composite_score: number
+  score_breakdown: AIScoreBreakdown
+  product_type_match: boolean
+  product_type_detected: string
+  color_match: boolean
+  color_detected: string
+  texture_match: boolean
+  texture_detected: string
+  is_correct_product: boolean
+  overall_match_score: number
+  reasoning: string
+  issues: string[]
+  quality: QualityResult
+  color: ColorAnalysisResult
+  verdict: string
+  verdict_reason: string
+  verdict_note: string
+  model_used: string
+  processing_time_ms: number
+}
+
 export interface CLIPAnalysisResult {
   composite_score: number
   score_breakdown: ScoreBreakdown

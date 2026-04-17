@@ -32,6 +32,9 @@ COLORS: list[str] = [
     "Fox Hollow Gray", "Resawn Shake", "Silver Birch", "Burnt Sienna",
     "Autumn Brown", "Desert Tan",
     "Barkwood", "Driftwood", "Shakewood", "Birchwood", "Charcoal", "Shadow",
+    # Generic base colors — kept last so multi-word names match first
+    "Black", "White", "Gray", "Grey", "Brown", "Tan", "Beige",
+    "Red", "Green", "Blue", "Orange", "Slate",
 ]
 
 STYLES: list[str] = [
@@ -68,7 +71,8 @@ QUANTITY_PATTERNS: list[str] = [
 
 def _find_first(text: str, candidates: list[str]) -> Optional[str]:
     for candidate in candidates:
-        if re.search(re.escape(candidate), text, re.IGNORECASE):
+        pattern = r'\b' + re.escape(candidate) + r'\b'
+        if re.search(pattern, text, re.IGNORECASE):
             return candidate
     return None
 
@@ -77,7 +81,8 @@ def _find_all(text: str, candidates: list[str]) -> list[str]:
     found: list[str] = []
     seen: set[str] = set()
     for candidate in candidates:
-        if re.search(re.escape(candidate), text, re.IGNORECASE) and candidate.lower() not in seen:
+        pattern = r'\b' + re.escape(candidate) + r'\b'
+        if re.search(pattern, text, re.IGNORECASE) and candidate.lower() not in seen:
             found.append(candidate)
             seen.add(candidate.lower())
     return found

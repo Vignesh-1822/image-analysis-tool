@@ -1,12 +1,13 @@
 import { ConfidenceRing } from '@/components/atoms/ConfidenceRing'
+import { ReasoningBox } from '@/components/atoms/ReasoningBox'
 import { ImageQualityRow } from '@/components/molecules/ImageQualityRow'
 import { ProductIdentificationCard } from '@/components/molecules/ProductIdentificationCard'
 import { SpecificationMatchCard } from '@/components/molecules/SpecificationMatchCard'
 import { VerdictBanner } from '@/components/molecules/VerdictBanner'
-import type { CLIPAnalysisResult } from '@/types/analysis'
+import type { AIModelAnalysisResult } from '@/types/analysis'
 
-interface CLIPResultsTabProps {
-  result: CLIPAnalysisResult
+interface AIModelResultsTabProps {
+  result: AIModelAnalysisResult
 }
 
 function ringConfig(score: number): { color: string; label: string } {
@@ -15,7 +16,7 @@ function ringConfig(score: number): { color: string; label: string } {
   return { color: '#C32032', label: 'Low Match' }
 }
 
-export function CLIPResultsTab({ result }: CLIPResultsTabProps) {
+export function AIModelResultsTab({ result }: AIModelResultsTabProps) {
   const { color, label } = ringConfig(result.composite_score)
 
   return (
@@ -51,7 +52,10 @@ export function CLIPResultsTab({ result }: CLIPResultsTabProps) {
         <ImageQualityRow quality={result.quality} />
       </div>
 
-      {/* Verdict card — inline below quality metrics */}
+      {/* AI reasoning — only in this tab */}
+      <ReasoningBox reasoning={result.reasoning} issues={result.issues} />
+
+      {/* Verdict card */}
       <VerdictBanner verdict={result.verdict} verdictNote={result.verdict_note} />
 
     </div>

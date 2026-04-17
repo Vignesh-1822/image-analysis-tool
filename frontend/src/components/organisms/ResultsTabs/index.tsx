@@ -1,12 +1,16 @@
+import { Loader2 } from 'lucide-react'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
+import { AIModelResultsTab } from '@/components/organisms/AIModelResultsTab'
 import { CLIPResultsTab } from '@/components/organisms/CLIPResultsTab'
-import type { CLIPAnalysisResult } from '@/types/analysis'
+import type { AIModelAnalysisResult, CLIPAnalysisResult } from '@/types/analysis'
 
 interface ResultsTabsProps {
   clipResult: CLIPAnalysisResult
+  aiResult: AIModelAnalysisResult | null
+  isLoading?: boolean
 }
 
-export function ResultsTabs({ clipResult }: ResultsTabsProps) {
+export function ResultsTabs({ clipResult, aiResult, isLoading = false }: ResultsTabsProps) {
   return (
     <Tabs defaultValue="clip">
       <TabsList className="rounded-xl bg-gray-100 h-10 p-1 gap-1">
@@ -35,14 +39,23 @@ export function ResultsTabs({ clipResult }: ResultsTabsProps) {
       </TabsContent>
 
       <TabsContent value="ai" className="mt-4">
-        <div className="flex flex-col items-center justify-center py-16 gap-2 bg-gray-50 rounded-xl border border-gray-100 text-gray-400">
-          <span className="text-sm font-semibold">AI API Analysis</span>
-          <span className="text-xs">Coming soon</span>
-        </div>
+        {aiResult ? (
+          <AIModelResultsTab result={aiResult} />
+        ) : isLoading ? (
+          <div className="flex flex-col items-center justify-center py-16 gap-3 bg-gray-50 border border-gray-100">
+            <Loader2 className="w-6 h-6 text-[#004990] animate-spin" />
+            <span className="text-sm text-gray-500">Running AI analysis…</span>
+          </div>
+        ) : (
+          <div className="flex flex-col items-center justify-center py-16 gap-2 bg-gray-50 border border-gray-100 text-gray-400">
+            <span className="text-sm font-semibold">AI API Analysis</span>
+            <span className="text-xs">No results available</span>
+          </div>
+        )}
       </TabsContent>
 
       <TabsContent value="yolo" className="mt-4">
-        <div className="flex flex-col items-center justify-center py-16 gap-2 bg-gray-50 rounded-xl border border-gray-100 text-gray-400">
+        <div className="flex flex-col items-center justify-center py-16 gap-2 bg-gray-50 border border-gray-100 text-gray-400">
           <span className="text-sm font-semibold">YOLO+SAM2 Segmentation</span>
           <span className="text-xs">Coming soon</span>
         </div>

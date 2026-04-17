@@ -1,16 +1,16 @@
 import { CheckCircle, XCircle } from 'lucide-react'
 import { ColorValidationBar } from '@/components/atoms/ColorValidationBar'
-import type { CLIPAnalysisResult } from '@/types/analysis'
+import type { ColorComparisonResult } from '@/types/analysis'
 
 interface SpecificationMatchCardProps {
-  result: CLIPAnalysisResult
+  compositeScore: number
+  comparison: ColorComparisonResult | null
 }
 
-export function SpecificationMatchCard({ result }: SpecificationMatchCardProps) {
-  // composite_score is the overall weighted match (0-100)
-  const similarity = result.composite_score
-  const isMatch = similarity >= 75
-  const comparison = result.color.comparison
+export function SpecificationMatchCard({ compositeScore, comparison }: SpecificationMatchCardProps) {
+  const isMatch = compositeScore >= 75
+  const barColor = isMatch ? 'bg-emerald-500' : compositeScore >= 50 ? 'bg-amber-400' : 'bg-[#C32032]'
+  const textColor = isMatch ? 'text-emerald-600' : compositeScore >= 50 ? 'text-amber-600' : 'text-[#C32032]'
 
   return (
     <div className="bg-white shadow-sm border border-gray-100 overflow-hidden">
@@ -26,7 +26,6 @@ export function SpecificationMatchCard({ result }: SpecificationMatchCardProps) 
       </div>
 
       <div className="px-5 py-4 flex flex-col gap-4">
-
         {comparison && comparison.match_score !== null && comparison.target_hex !== null ? (
           <ColorValidationBar
             matchScore={comparison.match_score}

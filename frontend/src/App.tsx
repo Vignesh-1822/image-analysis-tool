@@ -1,8 +1,8 @@
 import { useState } from 'react'
 import { Home } from '@/pages/Home'
 import { Results } from '@/pages/Results'
-import { analyzeWithClip, parseDescription } from '@/services/analysis'
-import type { CLIPAnalysisResult, ParsedDescription } from '@/types/analysis'
+import { analyzeWithAI, analyzeWithClip, parseDescription } from '@/services/analysis'
+import type { AIModelAnalysisResult, CLIPAnalysisResult, ParsedDescription } from '@/types/analysis'
 
 type Page = 'home' | 'results'
 
@@ -14,19 +14,22 @@ export default function App() {
   const [file, setFile] = useState<File | null>(null)
   const [description, setDescription] = useState('')
   const [result, setResult] = useState<CLIPAnalysisResult | null>(null)
+  const [aiResult, setAiResult] = useState<AIModelAnalysisResult | null>(null)
   const [parsed, setParsed] = useState<ParsedDescription | null>(null)
 
   const handleAnalyze = async (selectedFile: File, desc: string) => {
     setIsLoading(true)
     setError(null)
     try {
-      const [res, parsedDesc] = await Promise.all([
+      const [clipRes, aiRes, parsedDesc] = await Promise.all([
         analyzeWithClip(selectedFile, desc),
+        analyzeWithAI(selectedFile, desc),
         parseDescription(desc),
       ])
       setFile(selectedFile)
       setDescription(desc)
-      setResult(res)
+      setResult(clipRes)
+      setAiResult(aiRes)
       setParsed(parsedDesc)
       setPage('results')
     } catch (err) {
@@ -40,6 +43,7 @@ export default function App() {
     setFile(null)
     setDescription('')
     setResult(null)
+    setAiResult(null)
     setParsed(null)
     setError(null)
     setPage('home')
@@ -57,6 +61,7 @@ export default function App() {
         description={description}
         parsed={parsed}
         result={result}
+        aiResult={aiResult}
         onUploadNew={handleUploadNew}
         onReAnalyze={handleReAnalyze}
       />
