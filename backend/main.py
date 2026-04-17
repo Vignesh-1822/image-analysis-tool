@@ -1,18 +1,32 @@
+import logging
 from contextlib import asynccontextmanager
+
+logging.basicConfig(level=logging.INFO)
 
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from dotenv import load_dotenv
+from sqlalchemy import text
 
 from routers import ai_model, clip, color, parser, quality
 from services.clip import get_clip_model
 
 load_dotenv()
 
+from database import engine
+
+logger = logging.getLogger(__name__)
+
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     get_clip_model()
+    try:
+        with engine.connect() as conn:
+            conn.execute(text("SELECT 1"))
+        logger.info("Database connected successfully")
+    except Exception as e:
+        logger.error("Database connection failed: %s", e)
     yield
 
 
