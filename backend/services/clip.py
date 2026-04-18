@@ -8,6 +8,7 @@ from transformers import CLIPModel, CLIPProcessor
 from models.clip import CLIPAnalysisResult, ScoreBreakdown, ScoreComponent
 from models.product import ParsedDescription
 from services.color import analyze_image_color
+from services.image_downloader import download_image
 from services.quality import analyze_image_quality
 
 MODEL_NAME = "openai/clip-vit-base-patch32"
@@ -157,10 +158,28 @@ def _component(score: float, weight: float) -> ScoreComponent:
 
 
 def analyze_with_clip(
-    image_bytes: bytes,
+    image_bytes: bytes | None,
     description: str,
     parsed_description: ParsedDescription,
+    image_url: str | None = None,
+    primary_color: str | None = None,
 ) -> CLIPAnalysisResult:
+    if image_bytes is None and image_url:
+        image_bytes = download_image(image_url)
+    if image_bytes is None:
+        return CLIPAnalysisResult(
+            composite_score=0.0,
+            score_breakdown=ScoreBreakdown(product_type=None, color_match=None, image_quality=None),
+            product_type_detected="Unknown",
+            product_type_match=False,
+            quality=None,
+            color=None,
+            verdict="Replace",
+            verdict_note="Image could not be downloaded from CDN URL",
+            model_used="CLIP ViT-B/32",
+            processing_time_ms=0.0,
+        )
+
     start = time.time()
 
     # ── Step 1: CLIP zero-shot product type classification ────────────────────
@@ -175,7 +194,10 @@ def analyze_with_clip(
     quality_score = quality.overall_score
 
     # ── Step 3: Color extraction and matching ─────────────────────────────────
-    color = analyze_image_color(image_bytes, target_color_name=parsed_description.color)
+    if primary_color:
+        color = analyze_image_color(image_bytes, target_color_name=primary_color, source="pim")
+    else:
+        color = analyze_image_color(image_bytes, target_color_name=parsed_description.color)
 
     color_score: float | None = None
     if color.comparison is not None and color.comparison.match_score is not None:

@@ -361,12 +361,26 @@ def gaussian_score(delta_e: float, tolerance: float) -> float:
 
 # ── Pipeline: Step 8 — main entry point ──────────────────────────────────────
 
-def compare_colors(dominant_colors: list[dict], color_name: str) -> ColorComparisonResult:
+def compare_colors(
+    dominant_colors: list[dict],
+    color_name: str,
+    source: str = "description",
+) -> ColorComparisonResult:
     """
     Full semantic LAB pipeline.
     dominant_colors: list of {"hex": str, "percentage": float}
+    source: "description" runs parse_color_text; "pim" skips it and uses color_name directly.
     """
-    parsed = parse_color_text(color_name)
+    if source == "pim":
+        parsed = {
+            "base": color_name.lower(),
+            "matched_keyword": color_name.lower(),
+            "modifiers": [],
+            "modifier_words": [],
+            "raw": color_name,
+        }
+    else:
+        parsed = parse_color_text(color_name)
     expected_lab = generate_lab_center(parsed)
     variations = generate_lab_variations(expected_lab, parsed)
     tolerance = get_tolerance(parsed, expected_lab[0])
@@ -490,11 +504,12 @@ def analyze_image_color(
     image_bytes: bytes,
     target_color_name: str | None = None,
     k: int = 3,
+    source: str = "description",
 ) -> ColorAnalysisResult:
     dominant = extract_dominant_colors(image_bytes, k=k)
     if target_color_name:
         dominant_dicts = [{"hex": c.hex, "percentage": c.percentage} for c in dominant]
-        comparison = compare_colors(dominant_dicts, target_color_name)
+        comparison = compare_colors(dominant_dicts, target_color_name, source=source)
     else:
         comparison = None
     return ColorAnalysisResult(dominant_colors=dominant, comparison=comparison)

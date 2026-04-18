@@ -9,12 +9,19 @@ router = APIRouter(prefix="/api", tags=["ai-model"])
 
 @router.post("/analyze/ai-model", response_model=AIModelAnalysisResult)
 async def analyze_ai_model(
-    file: UploadFile,
     description: str = Form(...),
+    file: UploadFile | None = None,
+    image_url: str | None = Form(default=None),
+    primary_color: str | None = Form(default=None),
 ) -> AIModelAnalysisResult:
-    image_bytes = await file.read()
+    image_bytes = await file.read() if file else None
     parsed = parse_product_description(description)
     try:
-        return analyze_with_ai(image_bytes, parsed.model_dump())
+        return analyze_with_ai(
+            image_bytes,
+            parsed.model_dump(),
+            image_url=image_url,
+            primary_color=primary_color,
+        )
     except ValueError as exc:
         raise HTTPException(status_code=422, detail=str(exc)) from exc

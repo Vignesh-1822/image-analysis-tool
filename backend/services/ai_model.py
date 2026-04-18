@@ -10,6 +10,7 @@ from models.ai_model import AIModelAnalysisResult, AIScoreBreakdown
 from models.clip import ScoreComponent
 from models.color import ColorAnalysisResult, DominantColor
 from services.color import compare_colors, extract_dominant_colors
+from services.image_downloader import download_image
 from services.quality import analyze_image_quality
 
 _client: openai.OpenAI | None = None
@@ -124,21 +125,30 @@ def _component(score: float, weight: float) -> ScoreComponent:
 
 
 def analyze_with_ai(
-    image_bytes: bytes,
+    image_bytes: bytes | None,
     parsed_description: dict,
+    image_url: str | None = None,
+    primary_color: str | None = None,
 ) -> AIModelAnalysisResult:
+    if image_bytes is None and image_url:
+        image_bytes = download_image(image_url)
+    if image_bytes is None:
+        raise ValueError("Image could not be downloaded from CDN URL")
+
     start = time.time()
 
     # ── Step 1: Image quality + color extraction ──────────────────────────────
     quality = analyze_image_quality(image_bytes)
     dominant_colors = extract_dominant_colors(image_bytes)
 
-    color_name: str | None = parsed_description.get("color")
+    color_name: str | None = primary_color or parsed_description.get("color")
+    color_source = "pim" if primary_color else "description"
     color_comparison = None
     if color_name:
         color_comparison = compare_colors(
             [{"hex": c.hex, "percentage": c.percentage} for c in dominant_colors],
             color_name,
+            source=color_source,
         )
 
     color_result = ColorAnalysisResult(

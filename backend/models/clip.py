@@ -11,9 +11,9 @@ class ScoreComponent(BaseModel):
 
 
 class ScoreBreakdown(BaseModel):
-    product_type: ScoreComponent
+    product_type: ScoreComponent | None = None
     color_match: ScoreComponent | None = None
-    image_quality: ScoreComponent
+    image_quality: ScoreComponent | None = None
 
 
 class CLIPAnalysisResult(BaseModel):
@@ -21,8 +21,8 @@ class CLIPAnalysisResult(BaseModel):
     score_breakdown: ScoreBreakdown
     product_type_detected: str
     product_type_match: bool
-    quality: QualityResult
-    color: ColorAnalysisResult
+    quality: QualityResult | None = None
+    color: ColorAnalysisResult | None = None
     verdict: str                     # Approved / Catalog Only / Replace
     verdict_note: str
     model_used: str
