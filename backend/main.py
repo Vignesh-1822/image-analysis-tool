@@ -6,7 +6,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from dotenv import load_dotenv
 from sqlalchemy import text
 
-from routers import ai_model, clip, color, parser, quality
+from routers import admin, ai_model, clip, color, parser, quality
 from services.clip import get_clip_model
 
 load_dotenv()
@@ -37,6 +37,7 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+app.include_router(admin.router)
 app.include_router(parser.router)
 app.include_router(quality.router)
 app.include_router(color.router)
