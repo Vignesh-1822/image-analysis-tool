@@ -1,8 +1,6 @@
 import logging
 from contextlib import asynccontextmanager
 
-logging.basicConfig(level=logging.INFO)
-
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from dotenv import load_dotenv
@@ -15,7 +13,7 @@ load_dotenv()
 
 from database import engine
 
-logger = logging.getLogger(__name__)
+logger = logging.getLogger("uvicorn")
 
 
 @asynccontextmanager
