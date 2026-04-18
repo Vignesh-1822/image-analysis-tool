@@ -6,6 +6,9 @@ from fastapi.middleware.cors import CORSMiddleware
 from dotenv import load_dotenv
 from sqlalchemy import text
 
+from strawberry.fastapi import GraphQLRouter
+
+from gql.schema import schema
 from routers import admin, ai_model, clip, color, parser, quality
 from services.clip import get_clip_model
 
@@ -36,6 +39,9 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+graphql_app = GraphQLRouter(schema)
+app.include_router(graphql_app, prefix="/graphql")
 
 app.include_router(admin.router)
 app.include_router(parser.router)
