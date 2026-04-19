@@ -1,4 +1,4 @@
-import type { AIModelAnalysisResult, CLIPAnalysisResult, ParsedDescription } from '@/types/analysis'
+import type { AIModelAnalysisResult, CLIPAnalysisResult, CombinedAnalysisResult, ParsedDescription } from '@/types/analysis'
 
 const BASE_URL = 'http://localhost:8000'
 
@@ -42,6 +42,19 @@ export async function analyzeWithAI(
   }
 
   return res.json() as Promise<AIModelAnalysisResult>
+}
+
+export async function analyzeByIdentifier(identifier: string): Promise<CombinedAnalysisResult> {
+  const res = await fetch(`${BASE_URL}/api/analyze/${encodeURIComponent(identifier)}`, {
+    method: 'POST',
+  })
+
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({ detail: 'Unknown error' }))
+    throw new Error(err.detail ?? `HTTP ${res.status}`)
+  }
+
+  return res.json() as Promise<CombinedAnalysisResult>
 }
 
 export async function parseDescription(description: string): Promise<ParsedDescription> {

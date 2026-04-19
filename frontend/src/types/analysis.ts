@@ -108,10 +108,20 @@ export interface CLIPAnalysisResult {
   score_breakdown: ScoreBreakdown
   product_type_detected: string
   product_type_match: boolean
-  quality: QualityResult
-  color: ColorAnalysisResult
+  quality: QualityResult | null
+  color: ColorAnalysisResult | null
   verdict: string
   verdict_note: string
   model_used: string
   processing_time_ms: number
+}
+
+export interface CombinedAnalysisResult {
+  item_number: string
+  sku_id: string | null
+  hierarchy: string | null
+  primary_color: string | null
+  image_url: string | null
+  clip: CLIPAnalysisResult
+  ai: AIModelAnalysisResult
 }

@@ -9,8 +9,6 @@ interface SpecificationMatchCardProps {
 
 export function SpecificationMatchCard({ compositeScore, comparison }: SpecificationMatchCardProps) {
   const isMatch = compositeScore >= 75
-  const barColor = isMatch ? 'bg-emerald-500' : compositeScore >= 50 ? 'bg-amber-400' : 'bg-[#C32032]'
-  const textColor = isMatch ? 'text-emerald-600' : compositeScore >= 50 ? 'text-amber-600' : 'text-[#C32032]'
 
   return (
     <div className="bg-white shadow-sm border border-gray-100 overflow-hidden">

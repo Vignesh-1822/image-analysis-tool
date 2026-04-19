@@ -38,7 +38,7 @@ export function CLIPResultsTab({ result }: CLIPResultsTabProps) {
           />
           <SpecificationMatchCard
             compositeScore={result.composite_score}
-            comparison={result.color.comparison}
+            comparison={result.color?.comparison ?? null}
           />
         </div>
       </div>
@@ -48,7 +48,7 @@ export function CLIPResultsTab({ result }: CLIPResultsTabProps) {
         <p className="text-[10px] font-bold uppercase tracking-widest text-gray-400 mb-3">
           Image Quality Metrics
         </p>
-        <ImageQualityRow quality={result.quality} />
+        {result.quality && <ImageQualityRow quality={result.quality} />}
       </div>
 
       {/* Verdict card — inline below quality metrics */}
