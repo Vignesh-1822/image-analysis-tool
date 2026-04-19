@@ -38,13 +38,13 @@ def _detect_media_type(image_bytes: bytes) -> str:
     return "image/jpeg"
 
 
-def _build_user_prompt(parsed: dict) -> str:
+def _build_user_prompt(parsed: dict, hierarchy: str | None = None) -> str:
     brand = parsed.get("brand") or "Not specified"
     product_line = parsed.get("product_line") or "Not specified"
     color = parsed.get("color") or "Not specified"
     style = parsed.get("style") or "Not specified"
     features = parsed.get("features") or []
-    product_type = parsed.get("product_type") or "unknown"
+    product_category = hierarchy or parsed.get("product_type") or "unknown"
 
     features_str = ", ".join(features) if features else "None"
 
@@ -56,7 +56,7 @@ Product Line: {product_line}
 Color: {color}
 Style/Texture: {style}
 Features: {features_str}
-Product Type: {product_type}
+Product Category: {product_category}
 
 Respond with exactly this JSON structure:
 {{
@@ -129,6 +129,7 @@ def analyze_with_ai(
     parsed_description: dict,
     image_url: str | None = None,
     primary_color: str | None = None,
+    hierarchy: str | None = None,
 ) -> AIModelAnalysisResult:
     if image_bytes is None and image_url:
         image_bytes = download_image(image_url)
@@ -175,7 +176,7 @@ def analyze_with_ai(
                             "detail": "low",
                         },
                     },
-                    {"type": "text", "text": _build_user_prompt(parsed_description)},
+                    {"type": "text", "text": _build_user_prompt(parsed_description, hierarchy)},
                 ],
             },
         ],

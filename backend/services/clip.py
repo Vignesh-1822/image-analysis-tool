@@ -16,39 +16,6 @@ MODEL_NAME = "openai/clip-vit-base-patch32"
 _model: CLIPModel | None = None
 _processor: CLIPProcessor | None = None
 
-CANDIDATE_LABELS = [
-    "architectural shingle roof material",
-    "3-tab shingle roof material",
-    "ridge cap roofing",
-    "metal roof flashing",
-    "wood siding panel",
-    "concrete surface",
-    "brick wall",
-    "non-product",
-]
-
-# Maps CLIP candidate label → clean display name
-_LABEL_DISPLAY: dict[str, str] = {
-    "architectural shingle roof material": "Shingle",
-    "3-tab shingle roof material":         "Shingle",
-    "ridge cap roofing":                   "Ridge Cap",
-    "metal roof flashing":                 "Metal Flashing",
-    "wood siding panel":                   "Siding",
-    "concrete surface":                    "Concrete",
-    "brick wall":                          "Brick",
-    "non-product":                         "Non-product",
-}
-
-# Maps parsed_description.product_type → clean display name (None = unknown)
-_PARSED_TYPE_DISPLAY: dict[str, str | None] = {
-    "architectural_shingle": "Shingle",
-    "3tab_shingle":          "Shingle",
-    "ridge_cap":             "Ridge Cap",
-    "metal_flashing":        "Metal Flashing",
-    "underlayment":          "Underlayment",
-    "unknown":               None,
-}
-
 
 def get_clip_model() -> tuple[CLIPModel, CLIPProcessor]:
     global _model, _processor
@@ -59,40 +26,21 @@ def get_clip_model() -> tuple[CLIPModel, CLIPProcessor]:
     return _model, _processor
 
 
-def classify_product_type(
-    image_bytes: bytes,
-    parsed: ParsedDescription,
-) -> dict[str, object]:
-    """Zero-shot CLIP classification with confidence-threshold match logic."""
+def classify_product_type(image_bytes: bytes, hierarchy: str) -> dict[str, object]:
     model, processor = get_clip_model()
     image = Image.open(io.BytesIO(image_bytes)).convert("RGB")
-    inputs = processor(text=CANDIDATE_LABELS, images=image, return_tensors="pt", padding=True)
+    inputs = processor(text=[hierarchy], images=image, return_tensors="pt", padding=True)
 
     with torch.no_grad():
         outputs = model(**inputs)
 
-    probs = outputs.logits_per_image.softmax(dim=-1)[0]
-    best_idx = int(probs.argmax().item())
-    winning_label = CANDIDATE_LABELS[best_idx]
-    winning_confidence = round(float(probs[best_idx]) * 100, 2)
-
-    detected_display = _LABEL_DISPLAY[winning_label]
-    expected_display = _PARSED_TYPE_DISPLAY.get(parsed.product_type)
-
-    if winning_confidence >= 50:
-        if detected_display == expected_display or expected_display is None:
-            is_match = True
-            score = 80.0
-        else:
-            is_match = False
-            score = 20.0
-    else:
-        is_match = False
-        score = 45.0
+    confidence = round(float(outputs.logits_per_image.softmax(dim=-1)[0][0]) * 100, 2)
+    is_match = confidence >= 50
+    score = 80.0 if is_match else 20.0
 
     return {
-        "detected_type": detected_display,
-        "confidence": winning_confidence,
+        "detected_type": hierarchy,
+        "confidence": confidence,
         "product_type_match": is_match,
         "product_type_score": score,
     }
@@ -159,10 +107,10 @@ def _component(score: float, weight: float) -> ScoreComponent:
 
 def analyze_with_clip(
     image_bytes: bytes | None,
-    description: str,
-    parsed_description: ParsedDescription,
+    hierarchy: str,
     image_url: str | None = None,
     primary_color: str | None = None,
+    target_color: str | None = None,
 ) -> CLIPAnalysisResult:
     if image_bytes is None and image_url:
         image_bytes = download_image(image_url)
@@ -183,9 +131,8 @@ def analyze_with_clip(
     start = time.time()
 
     # ── Step 1: CLIP zero-shot product type classification ────────────────────
-    pt_result = classify_product_type(image_bytes, parsed_description)
+    pt_result = classify_product_type(image_bytes, hierarchy)
     product_type_detected = str(pt_result["detected_type"])
-    product_type_confidence = float(pt_result["confidence"])
     is_match = bool(pt_result["product_type_match"])
     pt_score = float(pt_result["product_type_score"])
 
@@ -194,10 +141,9 @@ def analyze_with_clip(
     quality_score = quality.overall_score
 
     # ── Step 3: Color extraction and matching ─────────────────────────────────
-    if primary_color:
-        color = analyze_image_color(image_bytes, target_color_name=primary_color, source="pim")
-    else:
-        color = analyze_image_color(image_bytes, target_color_name=parsed_description.color)
+    color_name = primary_color or target_color
+    color_source = "pim" if primary_color else "description"
+    color = analyze_image_color(image_bytes, target_color_name=color_name, source=color_source)
 
     color_score: float | None = None
     if color.comparison is not None and color.comparison.match_score is not None:
@@ -206,8 +152,8 @@ def analyze_with_clip(
     # ── Step 4: Composite score ───────────────────────────────────────────────
     if color_score is not None:
         composite = round(
-            pt_score     * 0.40 +
-            color_score  * 0.35 +
+            pt_score      * 0.40 +
+            color_score   * 0.35 +
             quality_score * 0.25,
             1,
         )
@@ -245,7 +191,7 @@ def analyze_with_clip(
     extracted_hex = color.dominant_colors[0].hex if color.dominant_colors else None
     verdict_note = _build_verdict_note(
         composite, component_scores,
-        color_name=parsed_description.color,
+        color_name=color_name,
         extracted_hex=extracted_hex,
     )
 

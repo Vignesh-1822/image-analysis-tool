@@ -9,7 +9,7 @@ from sqlalchemy import text
 from strawberry.fastapi import GraphQLRouter
 
 from gql.schema import schema
-from routers import admin, ai_model, clip, color, parser, quality
+from routers import admin, ai_model, analyze, clip, color, parser, quality
 from services.clip import get_clip_model
 
 load_dotenv()
@@ -44,6 +44,7 @@ graphql_app = GraphQLRouter(schema)
 app.include_router(graphql_app, prefix="/graphql")
 
 app.include_router(admin.router)
+app.include_router(analyze.router)
 app.include_router(parser.router)
 app.include_router(quality.router)
 app.include_router(color.router)
