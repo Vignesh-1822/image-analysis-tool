@@ -42,13 +42,13 @@ export function SKUSearch() {
                 value={identifier}
                 onChange={e => setIdentifier(e.target.value)}
                 onKeyDown={e => e.key === 'Enter' && handleSearch()}
-                className="pl-9 h-11 rounded-xl border-gray-200 text-sm"
+                className="pl-9 h-11 border-gray-200 text-sm"
               />
             </div>
             <Button
               onClick={handleSearch}
               disabled={!identifier.trim()}
-              className="h-11 px-6 rounded-xl bg-[#004990] hover:bg-[#003a7a] text-white text-sm font-semibold"
+              className="h-11 px-6 bg-[#004990] hover:bg-[#003a7a] text-white text-sm font-semibold"
             >
               Fetch Analysis
             </Button>
@@ -87,7 +87,7 @@ export function SKUSearch() {
 
 function FeatureCard({ icon, title, description }: { icon: React.ReactNode; title: string; description: string }) {
   return (
-    <div className="rounded-xl border border-gray-100 bg-white p-4 flex items-center flex-col gap-2 shadow-sm">
+    <div className="border border-gray-100 bg-white p-4 flex items-center flex-col gap-2 shadow-sm">
       <div className="w-8 h-8 rounded-lg bg-blue-50 flex items-center justify-center">
         {icon}
       </div>
