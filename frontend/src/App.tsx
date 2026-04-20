@@ -1,4 +1,5 @@
 import { BrowserRouter, Route, Routes, Navigate } from 'react-router-dom'
+import { Toaster } from '@/components/ui/sonner'
 import { SKUSearch } from '@/pages/SKUSearch'
 import { SKUResults } from '@/pages/SKUResults'
 import { UploadAnalysis } from '@/pages/UploadAnalysis'
@@ -8,6 +9,7 @@ import { AdminValidationQueue } from '@/pages/AdminValidationQueue'
 export default function App() {
   return (
     <BrowserRouter>
+      <Toaster position="top-center" theme="light" richColors />
       <Routes>
         <Route path="/" element={<SKUSearch />} />
         <Route path="/results/:identifier" element={<SKUResults />} />

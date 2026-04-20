@@ -58,6 +58,28 @@ export async function analyzeByIdentifier(identifier: string, signal?: AbortSign
   return res.json() as Promise<CombinedAnalysisResult>
 }
 
+export async function insertSku(
+  lightData: Record<string, unknown>,
+  fullData: Record<string, unknown>
+): Promise<{ message: string; item_number: string; sku_id: string; primary_color: string; hierarchy: string; image_link: string }> {
+  const res = await fetch(`${BASE_URL}/api/admin/insert-sku`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ light_data: lightData, full_data: fullData }),
+  })
+
+  const body = await res.json().catch(() => ({ detail: 'Unknown error' }))
+
+  if (res.status === 409) {
+    throw new Error(body.detail?.error ?? 'Product already exists')
+  }
+  if (!res.ok) {
+    throw new Error(body.detail?.error ?? body.detail ?? `HTTP ${res.status}`)
+  }
+
+  return body
+}
+
 export async function parseDescription(description: string): Promise<ParsedDescription> {
   const res = await fetch(`${BASE_URL}/api/parse-description`, {
     method: 'POST',
