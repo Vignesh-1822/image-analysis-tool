@@ -18,7 +18,7 @@ def trigger_n8n_pipeline(
     image_link: str | None,
 ) -> None:
     try:
-        webhook_url = "http://localhost:5678/webhook/product-inserted"
+        webhook_url = "http://127.0.0.1:5678/webhook/product-inserted"
         payload = {
             "item_number": item_number,
             "sku_id": sku_id,

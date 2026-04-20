@@ -8,7 +8,7 @@ import openai
 
 from models.ai_model import AIModelAnalysisResult, AIScoreBreakdown
 from models.clip import ScoreComponent
-from models.color import ColorAnalysisResult, DominantColor
+from models.color import ColorAnalysisResult
 from services.color import compare_colors, extract_dominant_colors
 from services.image_downloader import download_image
 from services.quality import analyze_image_quality
@@ -45,7 +45,6 @@ def _build_user_prompt(parsed: dict, hierarchy: str | None = None) -> str:
     style = parsed.get("style") or "Not specified"
     features = parsed.get("features") or []
     product_category = hierarchy or parsed.get("product_type") or "unknown"
-
     features_str = ", ".join(features) if features else "None"
 
     return f"""Analyze this product image against the specification below.
@@ -70,13 +69,11 @@ Respond with exactly this JSON structure:
   "overall_match_score": 0-100,
   "reasoning": "two to three sentences explaining your analysis",
   "issues": ["list specific issues, empty array if none"],
-  "verdict": "Approved" or "Catalog Only" or "Replace",
   "verdict_reason": "one sentence"
 }}"""
 
 
 def _parse_gpt_response(raw: str) -> dict:
-    # Strip markdown code fences if present
     cleaned = re.sub(r"^```(?:json)?\s*", "", raw.strip())
     cleaned = re.sub(r"\s*```$", "", cleaned)
     try:
@@ -121,7 +118,11 @@ def _build_verdict_note(
 
 
 def _component(score: float, weight: float) -> ScoreComponent:
-    return ScoreComponent(score=score, weight=weight, contribution=round(score * weight, 2))
+    return ScoreComponent(
+        score=score,
+        weight=weight,
+        contribution=round(score * weight, 2),
+    )
 
 
 def analyze_with_ai(
@@ -138,7 +139,7 @@ def analyze_with_ai(
 
     start = time.time()
 
-    # ── Step 1: Image quality + color extraction ──────────────────────────────
+    # Step 1 — Image quality + color extraction
     quality = analyze_image_quality(image_bytes)
     dominant_colors = extract_dominant_colors(image_bytes)
 
@@ -155,7 +156,7 @@ def analyze_with_ai(
         comparison=color_comparison,
     )
 
-    # ── Step 2: Build OpenAI request ──────────────────────────────────────────
+    # Step 2 — Build OpenAI request
     media_type = _detect_media_type(image_bytes)
     base64_image = base64.b64encode(image_bytes).decode("utf-8")
 
@@ -174,28 +175,31 @@ def analyze_with_ai(
                             "detail": "low",
                         },
                     },
-                    {"type": "text", "text": _build_user_prompt(parsed_description, hierarchy)},
+                    {
+                        "type": "text",
+                        "text": _build_user_prompt(parsed_description, hierarchy),
+                    },
                 ],
             },
         ],
     )
 
-    # ── Step 3: Parse response ────────────────────────────────────────────────
+    # Step 3 — Parse response
     raw = response.choices[0].message.content or ""
     gpt = _parse_gpt_response(raw)
 
     ai_overall = float(gpt.get("overall_match_score", 50))
     quality_score = quality.overall_score
 
-    # ── Step 4: Composite score ───────────────────────────────────────────────
+    # Step 4 — Composite score
     color_available = (
-        color_comparison is not None and
-        color_comparison.status == "matched" and
-        color_comparison.match_score is not None
+        color_comparison is not None
+        and color_comparison.status == "matched"
+        and color_comparison.match_score is not None
     )
 
     if color_available:
-        color_score = color_comparison.match_score  # type: ignore[union-attr]
+        color_score = color_comparison.match_score
         composite = round(
             ai_overall    * 0.50 +
             color_score   * 0.25 +
@@ -224,7 +228,18 @@ def analyze_with_ai(
     color_match_flag = bool(gpt.get("color_match", False))
     issues: list[str] = gpt.get("issues") or []
 
-    verdict_note = _build_verdict_note(composite, issues, product_type_match, color_match_flag)
+    # Step 5 — Verdict always from our composite score
+    # GPT's verdict_reason is kept as context but we decide the verdict
+    if composite >= 75:
+        verdict = "Approved"
+    elif composite >= 50:
+        verdict = "Catalog Only"
+    else:
+        verdict = "Replace"
+
+    verdict_note = _build_verdict_note(
+        composite, issues, product_type_match, color_match_flag
+    )
 
     return AIModelAnalysisResult(
         composite_score=composite,
@@ -241,7 +256,7 @@ def analyze_with_ai(
         issues=issues,
         quality=quality,
         color=color_result,
-        verdict=str(gpt.get("verdict", "Replace")),
+        verdict=verdict,
         verdict_reason=str(gpt.get("verdict_reason", "")),
         verdict_note=verdict_note,
         model_used="gpt-4o-mini",
