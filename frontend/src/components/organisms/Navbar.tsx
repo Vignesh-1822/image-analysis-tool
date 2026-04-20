@@ -6,9 +6,7 @@ export function Navbar() {
       <div className="max-w-7xl mx-auto px-8 h-14 flex items-center justify-between">
         {/* Left: brand — red text only, no badge/pill */}
         <div className="flex items-center gap-2">
-          <span className="text-sm font-bold text-[#C32032]">RoofPrecise AI</span>
-          <span className="text-gray-300 text-xs">|</span>
-          <span className="text-sm text-gray-500">Image Analysis Tool</span>
+          <span className="text-sm font-bold text-[#C32032]">ABC Supply Co.</span>
         </div>
 
         {/* Right: icon buttons */}

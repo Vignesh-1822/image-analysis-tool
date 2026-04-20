@@ -47,9 +47,6 @@ export function SKUResults() {
       <Navbar />
 
       <main className="flex-1 max-w-7xl w-full mx-auto px-8 py-10">
-        <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1">
-          Workflow: SKU Analysis Results
-        </p>
         <div className="flex items-baseline justify-between mb-6">
           <h1 className="text-3xl font-bold text-[#004990]">Validation Report</h1>
           {identifier && (
@@ -88,18 +85,6 @@ export function SKUResults() {
           </div>
         )}
       </main>
-
-      {result && (
-        <div className="max-w-7xl w-full mx-auto px-8 py-2 flex items-center gap-3">
-          <span className="text-[10px] text-gray-400">
-            Model: <span className="font-semibold text-gray-500">{result.clip.model_used}</span>
-          </span>
-          <span className="text-gray-300">·</span>
-          <span className="text-[10px] text-gray-400">
-            Processing: <span className="font-semibold text-gray-500">{result.clip.processing_time_ms.toFixed(0)} ms</span>
-          </span>
-        </div>
-      )}
     </div>
   )
 }

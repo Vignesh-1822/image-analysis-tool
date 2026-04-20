@@ -49,16 +49,6 @@ export function Results({ file, description, parsed, result, aiResult, onUploadN
           </div>
         </div>
       </main>
-
-      <div className="max-w-7xl w-full mx-auto px-8 py-2 flex items-center gap-3">
-        <span className="text-[10px] text-gray-400">
-          Model: <span className="font-semibold text-gray-500">{result.model_used}</span>
-        </span>
-        <span className="text-gray-300">·</span>
-        <span className="text-[10px] text-gray-400">
-          Processing: <span className="font-semibold text-gray-500">{result.processing_time_ms.toFixed(0)} ms</span>
-        </span>
-      </div>
     </div>
   )
 }
