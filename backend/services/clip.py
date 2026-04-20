@@ -1,21 +1,17 @@
 import io
 import time
-
 import torch
 from PIL import Image
 from transformers import CLIPModel, CLIPProcessor
-
 from models.clip import CLIPAnalysisResult, ScoreBreakdown, ScoreComponent
 from services.color import analyze_image_color
 from services.image_downloader import download_image
 from services.quality import analyze_image_quality
 
 MODEL_NAME = "openai/clip-vit-base-patch32"
-
 _model: CLIPModel | None = None
 _processor: CLIPProcessor | None = None
 
-# Wrong prompt — catches anything that is not a roofing product
 WRONG_PROMPT = (
     "a photo of nature, flowers, plants, people, animals, "
     "food, vehicles, furniture, electronics, clothing, "
@@ -34,7 +30,6 @@ def get_clip_model() -> tuple[CLIPModel, CLIPProcessor]:
 
 
 def compute_similarity(image_bytes: bytes, text: str) -> float:
-    """Compute CLIP cosine similarity between image and text. Returns 0-100."""
     model, processor = get_clip_model()
     image = Image.open(io.BytesIO(image_bytes)).convert("RGB")
     inputs = processor(
@@ -48,43 +43,45 @@ def compute_similarity(image_bytes: bytes, text: str) -> float:
 def classify_product_type(image_bytes: bytes, hierarchy: str) -> dict:
     """
     Two-prompt CLIP comparison.
-    Correct prompt: the product hierarchy from PIM
-    Wrong prompt: anything that is not a roofing product
 
-    If correct_score beats wrong_score by a meaningful margin
-    the image is likely the right product type.
-    If wrong_score wins or margin is tiny the image is likely wrong.
+    Key insight: CLIP scores for roofing products are naturally low
+    because CLIP was trained on general internet images, not roofing
+    catalogs. So we use relative comparison (correct vs wrong) rather
+    than absolute thresholds.
+
+    The only hard rule: if wrong_score clearly beats correct_score
+    the image is definitely not a roofing product.
     """
-    correct_prompt = f"a roofing product: {hierarchy}"
+    correct_prompt = f"a roofing building material product: {hierarchy}"
+    wrong_prompt = WRONG_PROMPT
+
     correct_score = compute_similarity(image_bytes, correct_prompt)
-    wrong_score = compute_similarity(image_bytes, WRONG_PROMPT)
+    wrong_score = compute_similarity(image_bytes, wrong_prompt)
 
     margin = correct_score - wrong_score
 
-    if wrong_score >= correct_score:
-        # Wrong prompt won — clearly not a roofing product
+    if wrong_score > correct_score + 10:
+        # Wrong prompt wins convincingly — clearly not a roofing product
         product_type_match = False
-        product_type_score = max(0.0, round(correct_score - wrong_score, 1))
+        product_type_score = max(0.0, round(20 + margin, 1))
 
-    elif margin < 5:
-        # Too close to call — uncertain
+    elif wrong_score > correct_score:
+        # Wrong prompt wins narrowly — uncertain, slight penalty
         product_type_match = False
-        product_type_score = 35.0
-
-    elif margin >= 20:
-        # Strong match
-        product_type_match = True
-        product_type_score = min(100.0, round(70 + margin, 1))
-
-    elif margin >= 10:
-        # Moderate match
-        product_type_match = True
-        product_type_score = 60.0
+        product_type_score = 40.0
 
     else:
-        # Weak match (margin 5-10)
+        # Correct prompt wins — roofing product confirmed
+        # Scale score by margin strength but be generous
+        # since CLIP scores are naturally low for this domain
         product_type_match = True
-        product_type_score = 50.0
+        if margin >= 15:
+            product_type_score = min(100.0, round(75 + margin, 1))
+        elif margin >= 5:
+            product_type_score = 70.0
+        else:
+            # Correct wins but margin is small — moderate confidence
+            product_type_score = 60.0
 
     return {
         "detected_type": hierarchy,
@@ -109,7 +106,6 @@ def _build_verdict_note(
 
     lowest = min(valid, key=lambda k: valid[k])
 
-    # Product type mismatch takes priority
     if not product_type_match:
         return (
             "Image does not appear to be a roofing product. "
@@ -124,7 +120,7 @@ def _build_verdict_note(
             return "Good match — all criteria met satisfactorily."
         if lowest == "color_match":
             return (
-                f"Good match — color variance detected. "
+                f"Good match — minor color variance detected. "
                 f"Verify '{color_name}' against extracted {extracted_hex}."
             )
         if lowest == "image_quality":
@@ -145,19 +141,37 @@ def _build_verdict_note(
             )
         if lowest == "color_match":
             return (
-                "Partial match — significant color mismatch detected. "
-                "Verify this is the correct color variant."
+                f"Partial match — color mismatch detected. "
+                f"Image color does not match the specified '{color_name}'. "
+                f"Verify the correct image is linked to this product."
             )
         return (
             "Partial match — image quality is too low for reliable analysis. "
             "Replace with a higher quality image."
         )
 
+    # Below 50 — find the worst component and give specific reason
+    if lowest == "color_match":
+        return (
+            f"Color mismatch — image does not match the specified "
+            f"'{color_name}'. Replace with the correct product image "
+            f"or review the PIM color data."
+        )
+    if lowest == "product_type":
+        return (
+            "Product type mismatch — image does not appear to match "
+            "the specified product category. Manual review required."
+        )
+    if lowest == "image_quality":
+        return (
+            "Image quality too low — image is too blurry or low resolution "
+            "for reliable analysis. Replace with a higher quality image."
+        )
+
     return (
         "Poor match — image does not meet specification criteria. "
         "Replace with a correct product image."
     )
-
 
 def _component(score: float, weight: float) -> ScoreComponent:
     return ScoreComponent(
