@@ -142,15 +142,18 @@ def analyze_with_clip(
 
     # ── Step 3: Color extraction and matching ─────────────────────────────────
     color_name = primary_color or target_color
-    color_source = "pim" if primary_color else "description"
-    color = analyze_image_color(image_bytes, target_color_name=color_name, source=color_source)
+    color = analyze_image_color(image_bytes, target_color_name=color_name)
 
-    color_score: float | None = None
-    if color.comparison is not None and color.comparison.match_score is not None:
-        color_score = color.comparison.match_score
+    color_result = color.comparison
+    color_available = (
+        color_result is not None and
+        color_result.status == "matched" and
+        color_result.match_score is not None
+    )
 
     # ── Step 4: Composite score ───────────────────────────────────────────────
-    if color_score is not None:
+    if color_available:
+        color_score = color_result.match_score  # type: ignore[union-attr]
         composite = round(
             pt_score      * 0.40 +
             color_score   * 0.35 +
@@ -163,6 +166,7 @@ def analyze_with_clip(
             image_quality=_component(quality_score, 0.25),
         )
     else:
+        color_score = None
         composite = round(
             pt_score      * 0.55 +
             quality_score * 0.45,

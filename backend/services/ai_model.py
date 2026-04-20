@@ -143,13 +143,11 @@ def analyze_with_ai(
     dominant_colors = extract_dominant_colors(image_bytes)
 
     color_name: str | None = primary_color or parsed_description.get("color")
-    color_source = "pim" if primary_color else "description"
     color_comparison = None
     if color_name:
         color_comparison = compare_colors(
             [{"hex": c.hex, "percentage": c.percentage} for c in dominant_colors],
             color_name,
-            source=color_source,
         )
 
     color_result = ColorAnalysisResult(
@@ -190,8 +188,14 @@ def analyze_with_ai(
     quality_score = quality.overall_score
 
     # ── Step 4: Composite score ───────────────────────────────────────────────
-    if color_comparison is not None and color_comparison.match_score is not None:
-        color_score = color_comparison.match_score
+    color_available = (
+        color_comparison is not None and
+        color_comparison.status == "matched" and
+        color_comparison.match_score is not None
+    )
+
+    if color_available:
+        color_score = color_comparison.match_score  # type: ignore[union-attr]
         composite = round(
             ai_overall    * 0.50 +
             color_score   * 0.25 +
@@ -204,6 +208,7 @@ def analyze_with_ai(
             image_quality=_component(quality_score, 0.25),
         )
     else:
+        color_score = None
         composite = round(
             ai_overall    * 0.65 +
             quality_score * 0.35,

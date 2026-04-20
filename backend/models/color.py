@@ -1,4 +1,4 @@
-from pydantic import BaseModel, Field
+from pydantic import BaseModel
 
 
 class DominantColor(BaseModel):
@@ -8,19 +8,16 @@ class DominantColor(BaseModel):
 
 
 class ColorComparisonResult(BaseModel):
-    extracted_hex: str
+    status: str  # matched / no_data / not_applicable / multicolored / transparent / unknown_color
+    extracted_hex: str | None = None
     target_hex: str | None = None
-    target_color_name: str
-    delta_e: float | None = Field(default=None, description="CIEDE2000 delta E of closest cluster")
-    match_score: float | None = None   # 0-100 weighted final score
-    match_label: str                   # Excellent / Good / Fair / Poor / Very Poor
-    resolution_method: str             # always "semantic_lab"
-    parsed_color: dict                 # output of parse_color_text
-    tolerance_used: float
-    cluster_scores: list[dict]         # per-cluster breakdown
-    expected_category: str
-    num_variations: int
-    clusters_filtered: int
+    target_color_name: str | None = None
+    delta_e: float | None = None
+    match_score: float | None = None
+    match_label: str | None = None
+    resolution_method: str = "pim_lab"
+    tolerance_used: float | None = None
+    cluster_scores: list[dict] = []
 
 
 class ColorAnalysisResult(BaseModel):
