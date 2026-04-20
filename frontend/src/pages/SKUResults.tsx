@@ -17,12 +17,23 @@ export function SKUResults() {
 
   useEffect(() => {
     if (!identifier) return
+    const controller = new AbortController()
     setIsLoading(true)
     setError(null)
-    analyzeByIdentifier(identifier)
-      .then(setResult)
-      .catch(err => setError(err instanceof Error ? err.message : 'Analysis failed'))
-      .finally(() => setIsLoading(false))
+    setResult(null)
+    analyzeByIdentifier(identifier, controller.signal)
+      .then(data => {
+        if (!controller.signal.aborted) setResult(data)
+      })
+      .catch(err => {
+        if (!controller.signal.aborted) {
+          setError(err instanceof Error ? err.message : 'Analysis failed')
+        }
+      })
+      .finally(() => {
+        if (!controller.signal.aborted) setIsLoading(false)
+      })
+    return () => controller.abort()
   }, [identifier])
 
   const refId = useMemo(() => {

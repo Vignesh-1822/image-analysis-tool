@@ -23,20 +23,8 @@ export function SpecificationMatchCard({ compositeScore, comparison }: Specifica
         </span>
       </div>
 
-      <div className="px-5 py-4 flex flex-col gap-4">
-        {comparison && comparison.match_score !== null && comparison.target_hex !== null ? (
-          <ColorValidationBar
-            matchScore={comparison.match_score}
-            extractedHex={comparison.extracted_hex}
-            targetHex={comparison.target_hex}
-            targetColorName={comparison.target_color_name}
-          />
-        ) : comparison ? (
-          <div className="flex flex-col gap-1">
-            <span className="text-xs text-gray-500 font-medium uppercase tracking-wider">Color Match</span>
-            <p className="text-xs text-gray-400 italic">{comparison.match_label}</p>
-          </div>
-        ) : null}
+      <div className="px-5 py-4">
+        <ColorValidationBar comparison={comparison} />
       </div>
     </div>
   )

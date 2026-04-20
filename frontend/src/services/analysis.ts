@@ -44,9 +44,10 @@ export async function analyzeWithAI(
   return res.json() as Promise<AIModelAnalysisResult>
 }
 
-export async function analyzeByIdentifier(identifier: string): Promise<CombinedAnalysisResult> {
+export async function analyzeByIdentifier(identifier: string, signal?: AbortSignal): Promise<CombinedAnalysisResult> {
   const res = await fetch(`${BASE_URL}/api/analyze/${encodeURIComponent(identifier)}`, {
     method: 'POST',
+    signal,
   })
 
   if (!res.ok) {

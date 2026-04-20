@@ -43,19 +43,16 @@ export interface DominantColor {
 }
 
 export interface ColorComparisonResult {
-  extracted_hex: string
+  status: 'matched' | 'no_data' | 'not_applicable' | 'multicolored' | 'transparent' | 'unknown_color'
+  extracted_hex: string | null
   target_hex: string | null
-  target_color_name: string
+  target_color_name: string | null
   delta_e: number | null
   match_score: number | null
-  match_label: string
+  match_label: string | null
   resolution_method: string
-  parsed_color: Record<string, unknown>
-  tolerance_used: number
-  cluster_scores: Record<string, unknown>[]
-  expected_category: string
-  num_variations: number
-  clusters_filtered: number
+  tolerance_used: number | null
+  cluster_scores: object[]
 }
 
 export interface ColorAnalysisResult {
