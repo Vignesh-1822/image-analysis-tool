@@ -1,3 +1,4 @@
+import httpx
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 
@@ -6,6 +7,29 @@ from models.admin import AnalysisResultResponse, InsertSKURequest
 from models.database_models import AnalysisResult, SKU
 
 router = APIRouter(prefix="/api/admin", tags=["admin"])
+
+
+def trigger_n8n_pipeline(
+    item_number: str,
+    sku_id: str | None,
+    primary_color: str | None,
+    hierarchy: str | None,
+    long_description: str | None,
+    image_link: str | None,
+) -> None:
+    try:
+        webhook_url = "http://localhost:5678/webhook/product-inserted"
+        payload = {
+            "item_number": item_number,
+            "sku_id": sku_id,
+            "primary_color": primary_color,
+            "hierarchy": hierarchy,
+            "long_description": long_description,
+            "image_link": image_link,
+        }
+        httpx.post(webhook_url, json=payload, timeout=5.0)
+    except Exception as e:
+        print(f"n8n webhook call failed: {e}")
 
 
 @router.post("/insert-sku", status_code=201)
@@ -44,6 +68,15 @@ def insert_sku(request: InsertSKURequest, db: Session = Depends(get_db)):
         )
         db.add(sku)
         db.commit()
+
+        trigger_n8n_pipeline(
+            item_number=item_number,
+            sku_id=sku_id,
+            primary_color=primary_color,
+            hierarchy=hierarchy,
+            long_description=long_description,
+            image_link=image_link,
+        )
 
         return {
             "message": "Product inserted successfully",
