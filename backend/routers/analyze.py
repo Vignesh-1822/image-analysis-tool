@@ -51,6 +51,7 @@ def analyze_by_identifier(
         sku_id=sku.sku_id,
         hierarchy=sku.hierarchy,
         primary_color=sku.primary_color,
+        long_description=sku.long_description,
         image_url=sku.image_link,
         clip=clip_result,
         ai=ai_result,

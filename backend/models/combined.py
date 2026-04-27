@@ -9,6 +9,7 @@ class CombinedAnalysisResult(BaseModel):
     sku_id: str | None
     hierarchy: str | None
     primary_color: str | None
+    long_description: str | None
     image_url: str | None
     clip: CLIPAnalysisResult
     ai: AIModelAnalysisResult

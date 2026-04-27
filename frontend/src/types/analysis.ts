@@ -117,6 +117,7 @@ export interface CombinedAnalysisResult {
   sku_id: string | null
   hierarchy: string | null
   primary_color: string | null
+  long_description: string | null
   image_url: string | null
   clip: CLIPAnalysisResult
   ai: AIModelAnalysisResult
