@@ -85,8 +85,6 @@ export interface AIModelAnalysisResult {
   product_type_detected: string
   color_match: boolean
   color_detected: string
-  texture_match: boolean
-  texture_detected: string
   is_correct_product: boolean
   overall_match_score: number
   reasoning: string

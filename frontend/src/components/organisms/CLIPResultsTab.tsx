@@ -28,6 +28,26 @@ export function CLIPResultsTab({ result }: CLIPResultsTabProps) {
             score={result.composite_score}
             label={label}
             color={color}
+            breakdown={[
+              {
+                label: "Product Type",
+                score: result.score_breakdown.product_type?.score ?? 0,
+                weight: result.score_breakdown.product_type?.weight ?? 0,
+                contribution: result.score_breakdown.product_type?.contribution ?? 0,
+              },
+              ...(result.score_breakdown.color_match ? [{
+                label: "Color Match",
+                score: result.score_breakdown.color_match.score,
+                weight: result.score_breakdown.color_match.weight,
+                contribution: result.score_breakdown.color_match.contribution,
+              }] : []),
+              {
+                label: "Image Quality",
+                score: result.score_breakdown.image_quality?.score ?? 0,
+                weight: result.score_breakdown.image_quality?.weight ?? 0,
+                contribution: result.score_breakdown.image_quality?.contribution ?? 0,
+              },
+            ]}
           />
         </div>
 

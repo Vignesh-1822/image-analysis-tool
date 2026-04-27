@@ -8,7 +8,7 @@ BLUR_SHARP_THRESHOLD = 100
 BLUR_SLIGHT_THRESHOLD = 50
 
 # Minimum dimension for CLIP/YOLO model input quality
-RESOLUTION_MIN = 800
+RESOLUTION_MIN = 720
 RESOLUTION_HIGH = 1920
 RESOLUTION_4K = 3840
 
@@ -95,7 +95,7 @@ def _analyze_framing(gray: np.ndarray) -> FramingResult:
 def _composite_score(blur: BlurResult, resolution: ResolutionResult, framing: FramingResult) -> tuple[float, str]:
     # Normalise each dimension to 0-100 before weighting
     blur_norm = min(blur.score, 200.0) / 200.0 * 100.0
-    res_norm = min(min(resolution.width, resolution.height), 3840) / 3840.0 * 100.0
+    res_norm = min(min(resolution.width, resolution.height) / RESOLUTION_MIN * 100.0, 100.0)
     frame_norm = (1.0 - framing.centroid_offset) * 100.0
 
     overall = round(max(0.0, min(100.0, (

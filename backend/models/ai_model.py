@@ -20,8 +20,6 @@ class AIModelAnalysisResult(BaseModel):
     product_type_detected: str
     color_match: bool
     color_detected: str
-    texture_match: bool
-    texture_detected: str
     is_correct_product: bool
     overall_match_score: float
     reasoning: str

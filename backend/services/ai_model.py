@@ -42,7 +42,6 @@ def _build_user_prompt(parsed: dict, hierarchy: str | None = None) -> str:
     brand = parsed.get("brand") or "Not specified"
     product_line = parsed.get("product_line") or "Not specified"
     color = parsed.get("color") or "Not specified"
-    style = parsed.get("style") or "Not specified"
     features = parsed.get("features") or []
     product_category = hierarchy or parsed.get("product_type") or "unknown"
     features_str = ", ".join(features) if features else "None"
@@ -53,7 +52,6 @@ PRODUCT SPECIFICATION:
 Brand: {brand}
 Product Line: {product_line}
 Color: {color}
-Style/Texture: {style}
 Features: {features_str}
 Product Category: {product_category}
 
@@ -63,8 +61,6 @@ Respond with exactly this JSON structure:
   "product_type_detected": "what product type you see",
   "color_match": true or false,
   "color_detected": "color you observe in the image",
-  "texture_match": true or false,
-  "texture_detected": "texture/pattern you observe",
   "is_correct_product": true or false,
   "overall_match_score": 0-100,
   "reasoning": "two to three sentences explaining your analysis",
@@ -248,8 +244,6 @@ def analyze_with_ai(
         product_type_detected=str(gpt.get("product_type_detected", "")),
         color_match=color_match_flag,
         color_detected=str(gpt.get("color_detected", "")),
-        texture_match=bool(gpt.get("texture_match", False)),
-        texture_detected=str(gpt.get("texture_detected", "")),
         is_correct_product=bool(gpt.get("is_correct_product", False)),
         overall_match_score=ai_overall,
         reasoning=str(gpt.get("reasoning", "")),
