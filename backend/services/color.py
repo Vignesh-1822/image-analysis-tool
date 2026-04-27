@@ -11,11 +11,17 @@ KMEANS_EPSILON = 1.0
 KMEANS_MAX_ITER = 100
 THUMBNAIL_SIZE = (150, 150)
 
+# LAB centers tuned for real roofing product photography
+# Key adjustments:
+# - black L raised to 20 (real black shingles photograph lighter)
+# - gray L lowered to 40 (accounts for dark charcoal gray shingles)
+# - brown L raised to 42, wider range product
+# - red L raised to 40 (real red shingles are not maroon)
 PIM_COLOR_LAB: dict[str, tuple[float, float, float]] = {
-    "black":   (18,  0,   0),
-    "gray":    (45, -1,  -2),
-    "brown":   (38,  8,  14),
-    "red":     (35,  28,  16),
+    "black":   (20,  0,   0),
+    "gray":    (40, -1,  -2),
+    "brown":   (42,  8,  14),
+    "red":     (40,  30,  18),
     "green":   (40, -12,   8),
     "white":   (88,  0,   2),
     "blue":    (32,   2, -18),
@@ -33,10 +39,6 @@ SKIP_REASONS: dict[str, str] = {
     "multicolored": "multicolored",
     "clear":        "transparent",
 }
-
-# Softmax temperature — controls how sharply scores
-# drop off for wrong colors. Lower = more discriminating.
-SOFTMAX_TEMPERATURE = 8.0
 
 
 def _hex_to_lab(hex_color: str) -> tuple[float, float, float]:
@@ -87,62 +89,38 @@ def _name_from_hsv(h: int, s: int, v: int) -> str:
     return "Purple"
 
 
-def _softmax_score(
-    cluster_lab: tuple[float, float, float],
-    expected_color_key: str,
-    temperature: float = SOFTMAX_TEMPERATURE,
-) -> float:
+def _get_dynamic_tolerance(expected_lab: tuple) -> float:
     """
-    Compute a relative match score using softmax over all known PIM colors.
+    Tolerance scales with lightness.
+    Dark colors vary more in product photography due to
+    studio lighting effects.
+    Light colors are more stable and need tighter tolerance.
 
-    Instead of asking "how close is this cluster to expected?" in absolute
-    terms, we ask "how much better does expected match vs all other colors?"
-
-    Score = softmax probability of the expected color × 100
-
-    This is fully dynamic — no hardcoded tolerances per color.
-    Works correctly for any color combination automatically.
-
-    Temperature controls discrimination:
-    - Lower temperature → sharper distinction between colors
-    - Higher temperature → more lenient, colors blend together
+    Also adds extra tolerance for inherently variable colors
+    like brown which spans a very wide natural range.
     """
-    cluster_np = np.array(cluster_lab, dtype=np.float64)
+    L = expected_lab[0]
+    a = expected_lab[1]
+    b = expected_lab[2]
 
-    # Compute Delta E from this cluster to every known PIM color
-    delta_es: dict[str, float] = {}
-    for color_key, lab_center in PIM_COLOR_LAB.items():
-        center_np = np.array(lab_center, dtype=np.float64)
-        delta_es[color_key] = float(deltaE_ciede2000(cluster_np, center_np))
+    # Base tolerance from lightness
+    if L < 25:
+        base = 24.0    # very dark — black, very dark charcoal
+    elif L < 40:
+        base = 22.0    # dark — dark gray, dark brown
+    elif L < 55:
+        base = 20.0    # medium — gray, brown
+    elif L < 70:
+        base = 18.0    # medium light — tan, beige
+    else:
+        base = 15.0    # light — white, yellow
 
-    # If expected color is unknown use neutral midpoint
-    if expected_color_key not in delta_es:
-        return 25.0  # unknown color — low confidence
+    # Extra tolerance for brown — naturally very wide range
+    # brown has positive a and b values
+    if a > 5 and b > 10 and L < 55:
+        base += 4.0
 
-    # Softmax: convert delta_e to probability
-    # Lower delta_e = higher probability
-    # We negate delta_e so smaller distance = larger softmax input
-    keys = list(delta_es.keys())
-    neg_distances = np.array([-delta_es[k] / temperature for k in keys])
-
-    # Numerically stable softmax
-    neg_distances -= neg_distances.max()
-    exp_values = np.exp(neg_distances)
-    softmax_probs = exp_values / exp_values.sum()
-
-    expected_idx = keys.index(expected_color_key)
-    probability = float(softmax_probs[expected_idx])
-
-    # Scale to 0-100
-    # If only one color existed probability would be 1.0 = 100
-    # With 12 colors random chance = 1/12 = 8.3%
-    # We scale so that probability = 1/n_colors maps to ~0
-    # and probability = 1.0 maps to 100
-    n_colors = len(keys)
-    chance_level = 1.0 / n_colors
-    score = max(0.0, (probability - chance_level) / (1.0 - chance_level)) * 100.0
-
-    return round(score, 1)
+    return base
 
 
 def extract_dominant_colors(
@@ -187,24 +165,19 @@ def compare_colors(
     dominant_colors: list[dict],
     color_name: str,
 ) -> ColorComparisonResult:
-    """
-    Compare extracted image colors against PIM primary color.
 
-    Uses softmax scoring — fully dynamic, no hardcoded tolerances.
-    Score reflects how well the expected color wins against all
-    other known PIM colors, not just an absolute distance.
-    """
     color_key = color_name.lower().strip() if color_name else ""
 
-    # Handle skip cases
+    # Handle skip cases — return early with status
     if color_key in SKIP_REASONS:
         return ColorComparisonResult(
             status=SKIP_REASONS[color_key],
             target_color_name=color_name or None,
-            extracted_hex=dominant_colors[0]["hex"] if dominant_colors else None,
+            extracted_hex=dominant_colors[0]["hex"]
+                          if dominant_colors else None,
         )
 
-    # Determine status
+    # Look up expected LAB center
     if color_key in PIM_COLOR_LAB:
         expected_lab = PIM_COLOR_LAB[color_key]
         status = "matched"
@@ -213,12 +186,18 @@ def compare_colors(
         status = "unknown_color"
 
     target_hex = _lab_to_hex(*expected_lab)
+    expected_np = np.array(expected_lab, dtype=np.float64)
 
-    # Filter extreme clusters
+    # Get dynamic tolerance based on lightness of expected color
+    tolerance = _get_dynamic_tolerance(expected_lab)
+
+    # Filter extreme clusters — only remove pure white backgrounds
+    # and near-invisible shadows. Lower threshold from 10 to 8
+    # so we don't accidentally remove valid dark product colors.
     clusters = []
     for c in dominant_colors:
         lab = _hex_to_lab(c["hex"])
-        if lab[0] < 10 or lab[0] > 95:
+        if lab[0] < 8 or lab[0] > 96:
             continue
         if c["percentage"] < 0.05:
             continue
@@ -228,6 +207,7 @@ def compare_colors(
             "percentage": c["percentage"],
         })
 
+    # Safety — if all filtered restore originals
     if not clusters:
         clusters = [
             {
@@ -238,20 +218,22 @@ def compare_colors(
             for c in dominant_colors
         ]
 
-    # Re-normalize
+    # Re-normalize percentages after filtering
     total = sum(c["percentage"] for c in clusters)
     for c in clusters:
         c["percentage"] = c["percentage"] / total
 
-    # Score each cluster using softmax
+    # Score each cluster using Gaussian with dynamic tolerance
     cluster_results = []
     for cluster in clusters:
-        score = _softmax_score(cluster["lab"], color_key)
-
-        # Delta E to expected — for display only, not used for scoring
         cluster_np = np.array(cluster["lab"], dtype=np.float64)
-        expected_np = np.array(expected_lab, dtype=np.float64)
         delta_e = float(deltaE_ciede2000(cluster_np, expected_np))
+
+        # Gaussian score
+        score = 100.0 * math.exp(
+            -(delta_e ** 2) / (2.0 * tolerance ** 2)
+        )
+        score = round(score, 1)
 
         cluster_results.append({
             "hex": cluster["hex"],
@@ -261,9 +243,10 @@ def compare_colors(
             "score": score,
         })
 
-    # Weighted final score
+    # Weighted final score by cluster percentage
     final_score = round(
-        sum(r["score"] * r["percentage"] for r in cluster_results), 1
+        sum(r["score"] * r["percentage"] for r in cluster_results),
+        1,
     )
 
     # Unknown color penalty
@@ -292,8 +275,8 @@ def compare_colors(
         delta_e=closest["delta_e"],
         match_score=final_score,
         match_label=label,
-        resolution_method="pim_softmax",
-        tolerance_used=SOFTMAX_TEMPERATURE,
+        resolution_method="pim_gaussian",
+        tolerance_used=tolerance,
         cluster_scores=cluster_results,
     )
 

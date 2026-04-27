@@ -1,4 +1,4 @@
-import { Eye, Monitor, Crosshair } from 'lucide-react'
+import { Eye, Monitor, Crosshair, Ruler } from 'lucide-react'
 import { QualityMetricCard } from '@/components/atoms/QualityMetricCard'
 import type { QualityResult } from '@/types/analysis'
 
@@ -15,6 +15,7 @@ function resolutionLabel(width: number): string {
 }
 
 export function ImageQualityRow({ quality }: ImageQualityRowProps) {
+  const { width, height } = quality.resolution
   return (
     <div className="flex gap-3">
       <QualityMetricCard
@@ -25,9 +26,15 @@ export function ImageQualityRow({ quality }: ImageQualityRowProps) {
       />
       <QualityMetricCard
         label="Resolution"
-        value={resolutionLabel(quality.resolution.width)}
+        value={resolutionLabel(width)}
         passed={quality.resolution.is_sufficient}
         icon={<Monitor className="w-5 h-5" />}
+      />
+      <QualityMetricCard
+        label="Dimensions"
+        value={`${width} × ${height} px`}
+        neutral
+        icon={<Ruler className="w-5 h-5" />}
       />
       <QualityMetricCard
         label="Framing"

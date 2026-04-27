@@ -7,12 +7,14 @@ interface ColorValidationBarProps {
 }
 
 export function ColorValidationBar({ comparison }: ColorValidationBarProps) {
-  if (!comparison) return null
+  if (!comparison) {
+    return <MutedCard message="No primary color specified for this product" />
+  }
 
   const { status } = comparison
 
   if (status === 'no_data') {
-    return <MutedCard message="Color data not available in PIM" />
+    return <MutedCard message="No primary color specified for this product" />
   }
 
   if (status === 'not_applicable') {
