@@ -10,6 +10,7 @@ class BlurResult(BaseModel):
 class ResolutionResult(BaseModel):
     width: int
     height: int
+    dpi: int | None = None   # extracted from image metadata; None if not embedded
     is_sufficient: bool
     label: str  # 4K Native / High Res / Sufficient / Low Res
 

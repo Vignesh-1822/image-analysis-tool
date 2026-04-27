@@ -72,16 +72,16 @@ def classify_product_type(image_bytes: bytes, hierarchy: str) -> dict:
 
     else:
         # Correct prompt wins — roofing product confirmed
-        # Scale score by margin strength but be generous
-        # since CLIP scores are naturally low for this domain
+        # CLIP scores are naturally low for domain-specific labels like
+        # "Asphalt Dimensional Shingles", so we floor matched scores generously.
         product_type_match = True
         if margin >= 15:
-            product_type_score = min(100.0, round(75 + margin, 1))
+            product_type_score = min(100.0, round(85 + margin, 1))
         elif margin >= 5:
-            product_type_score = 70.0
+            product_type_score = 80.0
         else:
-            # Correct wins but margin is small — moderate confidence
-            product_type_score = 60.0
+            # Correct wins but margin is small — still a confirmed match
+            product_type_score = 75.0
 
     return {
         "detected_type": hierarchy,

@@ -43,6 +43,7 @@ def analyze_by_identifier(
         parsed.model_dump(),
         primary_color=primary_color,
         hierarchy=hierarchy,
+        color_result=clip_result.color,
     )
 
     return CombinedAnalysisResult(

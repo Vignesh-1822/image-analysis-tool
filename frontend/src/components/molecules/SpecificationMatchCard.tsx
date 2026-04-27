@@ -8,7 +8,9 @@ interface SpecificationMatchCardProps {
 }
 
 export function SpecificationMatchCard({ compositeScore, comparison }: SpecificationMatchCardProps) {
-  const isMatch = compositeScore >= 75
+  const isMatch = comparison !== null &&
+    comparison?.status === 'matched' &&
+    (comparison?.match_score ?? 0) >= 75
 
   return (
     <div className="bg-white shadow-sm border border-gray-100 overflow-hidden">

@@ -18,6 +18,7 @@ export interface BlurResult {
 export interface ResolutionResult {
   width: number
   height: number
+  dpi: number | null
   is_sufficient: boolean
   label: string
 }

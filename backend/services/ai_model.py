@@ -9,7 +9,6 @@ import openai
 from models.ai_model import AIModelAnalysisResult, AIScoreBreakdown
 from models.clip import ScoreComponent
 from models.color import ColorAnalysisResult
-from services.color import compare_colors, extract_dominant_colors
 from services.image_downloader import download_image
 from services.quality import analyze_image_quality
 
@@ -127,6 +126,7 @@ def analyze_with_ai(
     image_url: str | None = None,
     primary_color: str | None = None,
     hierarchy: str | None = None,
+    color_result: ColorAnalysisResult | None = None,
 ) -> AIModelAnalysisResult:
     if image_bytes is None and image_url:
         image_bytes = download_image(image_url)
@@ -135,22 +135,20 @@ def analyze_with_ai(
 
     start = time.time()
 
-    # Step 1 — Image quality + color extraction
+    # Step 1 — Image quality; reuse color result from CLIP if provided
     quality = analyze_image_quality(image_bytes)
-    dominant_colors = extract_dominant_colors(image_bytes)
-
-    color_name: str | None = primary_color or parsed_description.get("color")
-    color_comparison = None
-    if color_name:
+    if color_result is None:
+        from services.color import compare_colors, extract_dominant_colors
+        dominant_colors = extract_dominant_colors(image_bytes)
+        color_name: str | None = primary_color or parsed_description.get("color")
         color_comparison = compare_colors(
             [{"hex": c.hex, "percentage": c.percentage} for c in dominant_colors],
             color_name,
+        ) if color_name else None
+        color_result = ColorAnalysisResult(
+            dominant_colors=dominant_colors,
+            comparison=color_comparison,
         )
-
-    color_result = ColorAnalysisResult(
-        dominant_colors=dominant_colors,
-        comparison=color_comparison,
-    )
 
     # Step 2 — Build OpenAI request
     media_type = _detect_media_type(image_bytes)
@@ -188,6 +186,7 @@ def analyze_with_ai(
     quality_score = quality.overall_score
 
     # Step 4 — Composite score
+    color_comparison = color_result.comparison
     color_available = (
         color_comparison is not None
         and color_comparison.status == "matched"
