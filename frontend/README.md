@@ -1,73 +1,61 @@
-# React + TypeScript + Vite
+# Image Analysis Tool — Frontend
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+React frontend for validating product images against PIM specifications using CLIP and GPT-4o-mini analysis.
 
-Currently, two official plugins are available:
+## Requirements
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
+- Node.js 18+
+- Backend API running on `http://localhost:8000`
 
-## React Compiler
+## Setup & Run
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
-
-## Expanding the ESLint configuration
-
-If you are developing a production application, we recommend updating the configuration to enable type-aware lint rules:
-
-```js
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-
-      // Remove tseslint.configs.recommended and replace with this
-      tseslint.configs.recommendedTypeChecked,
-      // Alternatively, use this for stricter rules
-      tseslint.configs.strictTypeChecked,
-      // Optionally, add this for stylistic rules
-      tseslint.configs.stylisticTypeChecked,
-
-      // Other configs...
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+```bash
+npm install
+npm run dev
 ```
 
-You can also install [eslint-plugin-react-x](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-x) and [eslint-plugin-react-dom](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-dom) for React-specific lint rules:
+App runs at `http://localhost:5173`
 
-```js
-// eslint.config.js
-import reactX from 'eslint-plugin-react-x'
-import reactDom from 'eslint-plugin-react-dom'
+## Build
 
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-      // Enable lint rules for React
-      reactX.configs['recommended-typescript'],
-      // Enable lint rules for React DOM
-      reactDom.configs.recommended,
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+```bash
+npm run build
 ```
+
+## Key Versions
+
+| Package | Version |
+|---------|---------|
+| React | 19 |
+| TypeScript | 5.9 |
+| Vite | 8 |
+| Tailwind CSS | 4 |
+
+## Folder Structure
+
+```
+src/
+├── components/
+│   ├── atoms/        # Smallest units — badges, metric cards, editable JSON nodes
+│   ├── molecules/    # Composed UI — filter bars, image quality row, JSON editor panel
+│   └── organisms/   # Full sections — navbar, results panel, CLIP/AI tabs, queue table
+├── pages/
+│   ├── SKUSearch.tsx            # Home search page
+│   ├── SKUResults.tsx           # Validation report (/results/:identifier)
+│   ├── AdminProductIntake.tsx   # Insert product JSON (/admin/product-intake)
+│   └── AdminValidationQueue.tsx # Failed validations (/admin/validation-queue)
+├── services/
+│   └── analysis.ts   # All API calls
+├── types/
+│   └── analysis.ts   # TypeScript interfaces for all API responses
+└── hooks/            # Custom React hooks
+```
+
+## Routes
+
+| Path | Description |
+|------|-------------|
+| `/` | SKU / item number search |
+| `/results/:identifier` | Validation report — accepts item number or SKU ID |
+| `/admin/product-intake` | Insert a product via Light + Full JSON |
+| `/admin/validation-queue` | View failed validations |
