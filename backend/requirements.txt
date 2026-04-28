@@ -33,6 +33,8 @@ pydantic_core==2.41.5
 Pygments==2.20.0
 psycopg2-binary==2.9.11
 python-dotenv==1.2.2
+onnxruntime==1.23.2
+rembg==2.0.69
 requests==2.33.1
 strawberry-graphql==0.314.3
 SQLAlchemy==2.0.49

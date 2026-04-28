@@ -29,36 +29,34 @@ def get_clip_model() -> tuple[CLIPModel, CLIPProcessor]:
     return _model, _processor
 
 
-def compute_similarity(image_bytes: bytes, text: str) -> float:
-    model, processor = get_clip_model()
-    image = Image.open(io.BytesIO(image_bytes)).convert("RGB")
-    inputs = processor(
-        text=[text], images=image, return_tensors="pt", padding=True
-    )
-    with torch.no_grad():
-        outputs = model(**inputs)
-    return round(float(outputs.logits_per_image.softmax(dim=-1)[0][0]) * 100, 2)
-
-
 def classify_product_type(image_bytes: bytes, hierarchy: str) -> dict:
     """
     Two-prompt CLIP comparison.
 
-    Key insight: CLIP scores for roofing products are naturally low
-    because CLIP was trained on general internet images, not roofing
-    catalogs. So we use relative comparison (correct vs wrong) rather
-    than absolute thresholds.
-
-    The only hard rule: if wrong_score clearly beats correct_score
-    the image is definitely not a roofing product.
+    Both prompts are passed to CLIP in a single call so softmax is computed
+    across them — giving genuine relative probabilities that sum to 100.
+    Calling CLIP once per prompt gives softmax([single_logit]) = 1.0 always.
     """
     correct_prompt = f"a roofing building material product: {hierarchy}"
-    wrong_prompt = WRONG_PROMPT
 
-    correct_score = compute_similarity(image_bytes, correct_prompt)
-    wrong_score = compute_similarity(image_bytes, wrong_prompt)
+    model, processor = get_clip_model()
+    image = Image.open(io.BytesIO(image_bytes)).convert("RGB")
+    inputs = processor(
+        text=[correct_prompt, WRONG_PROMPT], images=image, return_tensors="pt", padding=True
+    )
+    with torch.no_grad():
+        outputs = model(**inputs)
+
+    probs = outputs.logits_per_image.softmax(dim=-1)[0]
+    correct_score = round(float(probs[0]) * 100, 2)
+    wrong_score = round(float(probs[1]) * 100, 2)
 
     margin = correct_score - wrong_score
+
+    # Absolute confidence floor: even if correct prompt "wins", if CLIP's
+    # raw confidence is extremely low the image bears no resemblance to any
+    # roofing product at all (e.g. flowers, people, nature shots).
+    ABSOLUTE_MIN = 30.0
 
     if wrong_score > correct_score + 10:
         # Wrong prompt wins convincingly — clearly not a roofing product
@@ -70,8 +68,14 @@ def classify_product_type(image_bytes: bytes, hierarchy: str) -> dict:
         product_type_match = False
         product_type_score = 40.0
 
+    elif correct_score < ABSOLUTE_MIN:
+        # Correct prompt "wins" but CLIP has almost no confidence in it —
+        # image is clearly unrelated (flowers, nature, random objects).
+        product_type_match = False
+        product_type_score = max(0.0, round(correct_score / ABSOLUTE_MIN * 15, 1))
+
     else:
-        # Correct prompt wins — roofing product confirmed
+        # Correct prompt wins with sufficient absolute confidence — confirmed match.
         # CLIP scores are naturally low for domain-specific labels like
         # "Asphalt Dimensional Shingles", so we floor matched scores generously.
         product_type_match = True
@@ -266,6 +270,15 @@ def analyze_with_clip(
         verdict = "Catalog Only"
     else:
         verdict = "Replace"
+
+    # Color mismatch cannot be Approved — demote to Catalog Only
+    if (
+        color_available
+        and color_result.match_score is not None
+        and color_result.match_score < 75
+        and verdict == "Approved"
+    ):
+        verdict = "Catalog Only"
 
     # Verdict note
     component_scores: dict[str, float | None] = {

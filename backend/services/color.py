@@ -1,7 +1,10 @@
+import io
 import math
 
 import cv2
 import numpy as np
+from PIL import Image
+from rembg import remove
 from skimage.color import deltaE_ciede2000, lab2rgb, rgb2lab
 
 from models.color import ColorAnalysisResult, ColorComparisonResult, DominantColor
@@ -105,15 +108,15 @@ def _get_dynamic_tolerance(expected_lab: tuple) -> float:
 
     # Base tolerance from lightness
     if L < 25:
-        base = 24.0    # very dark — black, very dark charcoal
+        base = 10.0    # very dark — black, very dark charcoal
     elif L < 40:
-        base = 22.0    # dark — dark gray, dark brown
+        base = 12.0    # dark — dark gray, dark brown
     elif L < 55:
-        base = 20.0    # medium — gray, brown
+        base = 12.0    # medium — gray, brown, red
     elif L < 70:
-        base = 18.0    # medium light — tan, beige
+        base = 11.0    # medium light — tan, beige
     else:
-        base = 15.0    # light — white, yellow
+        base = 10.0    # light — white, yellow
 
     # Extra tolerance for brown — naturally very wide range
     # brown has positive a and b values
@@ -123,21 +126,47 @@ def _get_dynamic_tolerance(expected_lab: tuple) -> float:
     return base
 
 
+def _remove_background(image_bytes: bytes) -> np.ndarray | None:
+    """
+    Returns an RGBA numpy array with background removed.
+    Falls back to None if rembg fails, so caller can use full image.
+    """
+    try:
+        result_bytes = remove(image_bytes)
+        img = Image.open(io.BytesIO(result_bytes)).convert("RGBA")
+        return np.array(img)
+    except Exception:
+        return None
+
+
 def extract_dominant_colors(
     image_bytes: bytes,
     k: int = 3,
-    mask: np.ndarray | None = None,
 ) -> list[DominantColor]:
-    nparr = np.frombuffer(image_bytes, np.uint8)
-    image = cv2.imdecode(nparr, cv2.IMREAD_COLOR)
-    if image is None:
-        raise ValueError("Could not decode image.")
+    # Remove background — sample only foreground product pixels
+    rgba = _remove_background(image_bytes)
 
-    if mask is not None:
-        image = cv2.bitwise_and(image, image, mask=mask)
+    if rgba is not None:
+        # Keep only pixels where alpha > 10 (foreground)
+        alpha = rgba[:, :, 3]
+        rgb = rgba[:, :, :3]
+        foreground_mask = alpha > 10
+        pixels_rgb = rgb[foreground_mask]
 
-    thumb = cv2.resize(image, THUMBNAIL_SIZE, interpolation=cv2.INTER_AREA)
-    pixels = thumb.reshape(-1, 3).astype(np.float32)
+        if len(pixels_rgb) < k * 10:
+            # Not enough foreground pixels — fall back to full image
+            rgba = None
+
+    if rgba is None:
+        nparr = np.frombuffer(image_bytes, np.uint8)
+        image = cv2.imdecode(nparr, cv2.IMREAD_COLOR)
+        if image is None:
+            raise ValueError("Could not decode image.")
+        thumb = cv2.resize(image, THUMBNAIL_SIZE, interpolation=cv2.INTER_AREA)
+        # Convert BGR → RGB
+        pixels_rgb = cv2.cvtColor(thumb, cv2.COLOR_BGR2RGB).reshape(-1, 3)
+
+    pixels = pixels_rgb.astype(np.float32)
 
     criteria = (
         cv2.TERM_CRITERIA_EPS + cv2.TERM_CRITERIA_MAX_ITER,
@@ -151,14 +180,17 @@ def extract_dominant_colors(
     counts = np.bincount(labels.flatten(), minlength=k)
     total = len(labels.flatten())
 
-    return [
-        DominantColor(
-            hex=_bgr_to_hex(centers[i]),
+    # centers are RGB now — convert to BGR for existing helpers
+    results = []
+    for i in np.argsort(counts)[::-1]:
+        r, g, b = int(centers[i][0]), int(centers[i][1]), int(centers[i][2])
+        bgr = np.array([b, g, r])
+        results.append(DominantColor(
+            hex=_bgr_to_hex(bgr),
             percentage=round(float(counts[i]) / total, 4),
-            color_name=_name_from_hsv(*_bgr_to_hsv(centers[i])),
-        )
-        for i in np.argsort(counts)[::-1]
-    ]
+            color_name=_name_from_hsv(*_bgr_to_hsv(bgr)),
+        ))
+    return results
 
 
 def compare_colors(

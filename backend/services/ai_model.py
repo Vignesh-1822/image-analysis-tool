@@ -37,13 +37,37 @@ def _detect_media_type(image_bytes: bytes) -> str:
     return "image/jpeg"
 
 
-def _build_user_prompt(parsed: dict, hierarchy: str | None = None) -> str:
+def _build_user_prompt(
+    parsed: dict,
+    hierarchy: str | None = None,
+    primary_color: str | None = None,
+    color_result: "ColorAnalysisResult | None" = None,
+) -> str:
     brand = parsed.get("brand") or "Not specified"
     product_line = parsed.get("product_line") or "Not specified"
-    color = parsed.get("color") or "Not specified"
+    # primary_color from PIM takes precedence over parsed description color
+    color = primary_color or parsed.get("color") or "Not specified"
     features = parsed.get("features") or []
     product_category = hierarchy or parsed.get("product_type") or "unknown"
     features_str = ", ".join(features) if features else "None"
+
+    # Build color analysis context so GPT reasoning matches our computed score
+    color_context = ""
+    if color_result and color_result.comparison and color_result.comparison.status == "matched":
+        cmp = color_result.comparison
+        extracted = cmp.extracted_hex or "unknown"
+        score = cmp.match_score or 0
+        delta = cmp.delta_e or 0
+        label = cmp.match_label or "unknown"
+        color_context = (
+            f"\nCOLOR ANALYSIS (computed algorithmically — use this to inform color_match and reasoning):\n"
+            f"  Specified color: {color}\n"
+            f"  Extracted dominant color from image: {extracted}\n"
+            f"  Color match score: {score:.0f}/100 ({label})\n"
+            f"  Delta E (perceptual color distance): {delta:.1f} — "
+            f"{'good match' if delta < 10 else 'moderate difference' if delta < 20 else 'clear mismatch'}\n"
+            f"  Set color_match to true only if score >= 75.\n"
+        )
 
     return f"""Analyze this product image against the specification below.
 
@@ -53,16 +77,20 @@ Product Line: {product_line}
 Color: {color}
 Features: {features_str}
 Product Category: {product_category}
+{color_context}
+IMPORTANT: The color field above is the authoritative PIM color specification. \
+Evaluate color_match strictly against it — do not infer the intended color from the product type.
 
 Respond with exactly this JSON structure:
 {{
   "product_type_match": true or false,
   "product_type_detected": "what product type you see",
+  "product_type_score": 0-100 (score ONLY on whether the image shows the correct product category — ignore color entirely here),
   "color_match": true or false,
   "color_detected": "color you observe in the image",
   "is_correct_product": true or false,
   "overall_match_score": 0-100,
-  "reasoning": "two to three sentences explaining your analysis",
+  "reasoning": "two to three sentences explaining your analysis, explicitly addressing whether the image color matches the specified color",
   "issues": ["list specific issues, empty array if none"],
   "verdict_reason": "one sentence"
 }}"""
@@ -171,7 +199,12 @@ def analyze_with_ai(
                     },
                     {
                         "type": "text",
-                        "text": _build_user_prompt(parsed_description, hierarchy),
+                        "text": _build_user_prompt(
+                            parsed_description,
+                            hierarchy=hierarchy,
+                            primary_color=primary_color,
+                            color_result=color_result,
+                        ),
                     },
                 ],
             },
@@ -183,6 +216,9 @@ def analyze_with_ai(
     gpt = _parse_gpt_response(raw)
 
     ai_overall = float(gpt.get("overall_match_score", 50))
+    # Use product_type_score for the 50% weight component — isolates product type
+    # from color so color isn't penalized twice (once here, once in color_match component)
+    ai_product_type_score = float(gpt.get("product_type_score", ai_overall))
     quality_score = quality.overall_score
 
     # Step 4 — Composite score
@@ -196,25 +232,25 @@ def analyze_with_ai(
     if color_available:
         color_score = color_comparison.match_score
         composite = round(
-            ai_overall    * 0.50 +
-            color_score   * 0.25 +
-            quality_score * 0.25,
+            ai_product_type_score * 0.50 +
+            color_score           * 0.25 +
+            quality_score         * 0.25,
             1,
         )
         breakdown = AIScoreBreakdown(
-            ai_analysis=_component(ai_overall, 0.50),
+            ai_analysis=_component(ai_product_type_score, 0.50),
             color_match=_component(color_score, 0.25),
             image_quality=_component(quality_score, 0.25),
         )
     else:
         color_score = None
         composite = round(
-            ai_overall    * 0.65 +
-            quality_score * 0.35,
+            ai_product_type_score * 0.65 +
+            quality_score         * 0.35,
             1,
         )
         breakdown = AIScoreBreakdown(
-            ai_analysis=_component(ai_overall, 0.65),
+            ai_analysis=_component(ai_product_type_score, 0.65),
             color_match=None,
             image_quality=_component(quality_score, 0.35),
         )
@@ -231,6 +267,15 @@ def analyze_with_ai(
         verdict = "Catalog Only"
     else:
         verdict = "Replace"
+
+    # Color mismatch cannot be Approved — demote to Catalog Only
+    if (
+        color_available
+        and color_score is not None
+        and color_score < 75
+        and verdict == "Approved"
+    ):
+        verdict = "Catalog Only"
 
     verdict_note = _build_verdict_note(
         composite, issues, product_type_match, color_match_flag
