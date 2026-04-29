@@ -2,15 +2,18 @@ import { Loader2 } from 'lucide-react'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { AIModelResultsTab } from '@/components/organisms/AIModelResultsTab'
 import { CLIPResultsTab } from '@/components/organisms/CLIPResultsTab'
-import type { AIModelAnalysisResult, CLIPAnalysisResult } from '@/types/analysis'
+import { YoloResultsTab } from '@/components/organisms/YoloResultsTab'
+import type { AIModelAnalysisResult, CLIPAnalysisResult, YoloSamAnalysisResult } from '@/types/analysis'
 
 interface ResultsTabsProps {
   clipResult: CLIPAnalysisResult
   aiResult: AIModelAnalysisResult | null
+  segmentedImage?: string | null
+  yoloResult?: YoloSamAnalysisResult | null
   isLoading?: boolean
 }
 
-export function ResultsTabs({ clipResult, aiResult, isLoading = false }: ResultsTabsProps) {
+export function ResultsTabs({ clipResult, aiResult, segmentedImage, yoloResult, isLoading = false }: ResultsTabsProps) {
   return (
     <Tabs defaultValue="clip">
       <TabsList className="rounded-xl bg-gray-100 h-10 p-1 gap-1">
@@ -55,10 +58,14 @@ export function ResultsTabs({ clipResult, aiResult, isLoading = false }: Results
       </TabsContent>
 
       <TabsContent value="yolo" className="mt-4">
-        <div className="flex flex-col items-center justify-center py-16 gap-2 bg-gray-50 border border-gray-100 text-gray-400">
-          <span className="text-sm font-semibold">YOLO+SAM2 Segmentation</span>
-          <span className="text-xs">Coming soon</span>
-        </div>
+        {yoloResult ? (
+          <YoloResultsTab result={yoloResult} segmentedImage={segmentedImage} />
+        ) : (
+          <div className="flex flex-col items-center justify-center py-16 gap-2 bg-gray-50 border border-gray-100 text-gray-400 rounded-xl">
+            <span className="text-sm font-semibold">YOLO+SAM2 Segmentation</span>
+            <span className="text-xs">Report not ready</span>
+          </div>
+        )}
       </TabsContent>
     </Tabs>
   )

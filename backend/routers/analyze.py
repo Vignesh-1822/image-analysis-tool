@@ -8,6 +8,10 @@ from services.ai_model import analyze_with_ai
 from services.clip import analyze_with_clip
 from services.image_downloader import download_image
 from services.parser import parse_product_description
+from services.yolo_sam import analyze_with_yolo_sam
+import base64
+
+
 
 router = APIRouter(prefix="/api", tags=["analyze"])
 
@@ -32,14 +36,21 @@ def analyze_by_identifier(
     long_description = sku.long_description or ""
     parsed = parse_product_description(long_description)
 
-    clip_result = analyze_with_clip(
+    # Run YOLO+SAM2 full analysis (segmentation + quality + color + scoring)
+    clean_image_bytes, yolo_result = analyze_with_yolo_sam(
         image_bytes,
+        hierarchy=hierarchy,
+        primary_color=primary_color,
+    )
+
+    clip_result = analyze_with_clip(
+        clean_image_bytes,
         hierarchy,
         primary_color=primary_color,
     )
 
     ai_result = analyze_with_ai(
-        image_bytes,
+        clean_image_bytes,
         parsed.model_dump(),
         primary_color=primary_color,
         hierarchy=hierarchy,
@@ -53,6 +64,8 @@ def analyze_by_identifier(
         primary_color=sku.primary_color,
         long_description=sku.long_description,
         image_url=sku.image_link,
+        segmented_image_base64=base64.b64encode(clean_image_bytes).decode('utf-8'),
         clip=clip_result,
         ai=ai_result,
+        yolo=yolo_result,
     )
