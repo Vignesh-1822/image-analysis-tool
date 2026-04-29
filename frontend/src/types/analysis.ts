@@ -79,6 +79,12 @@ export interface AIScoreBreakdown {
   image_quality: ScoreComponent
 }
 
+export interface YoloScoreBreakdown {
+  detection: ScoreComponent
+  color_match: ScoreComponent | null
+  image_quality: ScoreComponent
+}
+
 export interface AIModelAnalysisResult {
   composite_score: number
   score_breakdown: AIScoreBreakdown
@@ -112,6 +118,26 @@ export interface CLIPAnalysisResult {
   processing_time_ms: number
 }
 
+export interface YoloSamAnalysisResult {
+  status: string
+  object_detected: boolean
+  class_name: string | null
+  confidence: number
+  mask_area_percent: number
+
+  // Full analysis fields
+  composite_score: number
+  score_breakdown: YoloScoreBreakdown | null
+  product_type_detected: string | null
+  product_type_match: boolean
+  quality: QualityResult | null
+  color: ColorAnalysisResult | null
+  verdict: string
+  verdict_note: string
+  model_used: string
+  processing_time_ms: number
+}
+
 export interface CombinedAnalysisResult {
   item_number: string
   sku_id: string | null
@@ -119,6 +145,8 @@ export interface CombinedAnalysisResult {
   primary_color: string | null
   long_description: string | null
   image_url: string | null
+  segmented_image_base64: string | null
   clip: CLIPAnalysisResult
   ai: AIModelAnalysisResult
+  yolo: YoloSamAnalysisResult
 }

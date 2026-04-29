@@ -80,7 +80,12 @@ export function SKUResults() {
               />
             </div>
             <div className="col-span-3">
-              <ResultsTabs clipResult={result.clip} aiResult={result.ai} />
+              <ResultsTabs 
+                clipResult={result.clip} 
+                aiResult={result.ai} 
+                segmentedImage={result.segmented_image_base64} 
+                yoloResult={result.yolo}
+              />
             </div>
           </div>
         )}
