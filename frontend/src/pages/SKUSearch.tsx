@@ -19,14 +19,14 @@ export function SKUSearch() {
     <div className="min-h-screen bg-gray-50 flex flex-col">
       <Navbar />
 
-      <main className="flex-1 flex flex-col items-center justify-center px-8 py-20">
+      <main className="flex-1 flex flex-col items-center justify-center px-4 sm:px-8 py-10 sm:py-20">
         {/* Hero */}
-        <div className="text-center mb-12 max-w-2xl">
+        <div className="text-center mb-8 sm:mb-12 max-w-2xl">
           <p className="text-[10px] font-bold uppercase tracking-widest text-gray-500 mb-3">
             Precision Retrieval Engine
           </p>
-          <h1 className="text-5xl font-bold mb-4 text-[#004990]">Image Analysis Tool</h1>
-          <p className="text-gray-500 text-base leading-relaxed">
+          <h1 className="text-3xl sm:text-5xl font-bold mb-4 text-[#004990]">Image Analysis Tool</h1>
+          <p className="text-gray-500 text-sm sm:text-base leading-relaxed">
             Enter a SKU or product item number to retrieve high-fidelity imagery and run
             AI-powered validation against your product specifications.
           </p>
@@ -56,7 +56,7 @@ export function SKUSearch() {
         </div>
 
         {/* Feature cards */}
-        <div className="grid grid-cols-3 gap-4 w-full max-w-xl mt-8">
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 w-full max-w-xl mt-8">
           <FeatureCard
             icon={<ShieldCheck className="w-5 h-5 text-[#004990]" />}
             title="Verified Data"

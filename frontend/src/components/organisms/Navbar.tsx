@@ -7,15 +7,15 @@ export function Navbar() {
 
   return (
     <header className="border-b border-gray-200 sticky top-0 z-50 bg-[#004990] text-white">
-      <div className="max-w-7xl mx-auto px-8 h-14 flex items-center justify-between">
+      <div className="max-w-7xl mx-auto px-4 sm:px-8 h-14 flex items-center justify-between">
         {/* Left: brand — red text only, no badge/pill */}
         <div className="flex items-center gap-2">
-          <span className="text-lg font-bold text-[#C32032]">ABC Supply Co.</span>
+          <span className="text-base sm:text-lg font-bold text-[#C32032]">ABC Supply Co.</span>
         </div>
 
         {/* Center: Admin Tabs */}
         {isAdminRoute && (
-          <div className="flex items-center gap-8 h-full">
+          <div className="flex items-center gap-4 sm:gap-8 h-full">
             <Link
               to="/admin/product-intake"
               className={`text-sm font-bold tracking-wide flex items-center border-b-2 transition-all h-full ${location.pathname === '/admin/product-intake' || location.pathname === '/admin'

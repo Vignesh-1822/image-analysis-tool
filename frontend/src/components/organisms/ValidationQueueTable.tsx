@@ -28,14 +28,15 @@ export function ValidationQueueTable({
 
   return (
     <div className="bg-white border border-gray-200 overflow-hidden rounded-lg shadow-sm">
-      <table className="w-full text-left border-collapse">
+      <div className="overflow-x-auto">
+      <table className="w-full min-w-[600px] text-left border-collapse">
         <thead>
           <tr className="bg-gray-50 border-b border-gray-200">
-            <th className="px-6 py-4 text-xs font-bold text-gray-500 uppercase tracking-wider">Item Number</th>
-            <th className="px-6 py-4 text-xs font-bold text-gray-500 uppercase tracking-wider">Product Name</th>
-            <th className="px-6 py-4 text-xs font-bold text-gray-500 uppercase tracking-wider text-center">Score</th>
-            <th className="px-6 py-4 text-xs font-bold text-gray-500 uppercase tracking-wider">Verdict</th>
-            <th className="px-6 py-4 text-xs font-bold text-gray-500 uppercase tracking-wider text-right">Actions</th>
+            <th className="px-4 sm:px-6 py-3 sm:py-4 text-xs font-bold text-gray-500 uppercase tracking-wider">Item Number</th>
+            <th className="px-4 sm:px-6 py-3 sm:py-4 text-xs font-bold text-gray-500 uppercase tracking-wider">Product Name</th>
+            <th className="px-4 sm:px-6 py-3 sm:py-4 text-xs font-bold text-gray-500 uppercase tracking-wider text-center">Score</th>
+            <th className="px-4 sm:px-6 py-3 sm:py-4 text-xs font-bold text-gray-500 uppercase tracking-wider">Verdict</th>
+            <th className="px-4 sm:px-6 py-3 sm:py-4 text-xs font-bold text-gray-500 uppercase tracking-wider text-right">Actions</th>
           </tr>
         </thead>
         <tbody className="divide-y divide-gray-100">
@@ -51,8 +52,9 @@ export function ValidationQueueTable({
           ))}
         </tbody>
       </table>
+      </div>
 
-      <footer className="px-6 py-4 bg-gray-50 flex justify-between items-center border-t border-gray-200">
+      <footer className="px-4 sm:px-6 py-3 sm:py-4 bg-gray-50 flex justify-between items-center border-t border-gray-200">
         <p className="text-xs text-gray-500 font-medium">
           SHOWING {Math.min(50, totalResults)} OF {totalResults.toLocaleString()} RESULTS
         </p>

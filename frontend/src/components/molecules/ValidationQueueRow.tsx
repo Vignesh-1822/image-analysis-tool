@@ -24,19 +24,19 @@ export function ValidationQueueRow({
 }: ValidationQueueRowProps) {
   return (
     <tr className="hover:bg-gray-50 transition-colors">
-      <td className="px-6 py-4 font-mono text-xs text-gray-500">{itemNumber}</td>
-      <td className="px-6 py-4 font-semibold text-gray-900 text-sm">{productName}</td>
-      <td className="px-6 py-4">
+      <td className="px-4 sm:px-6 py-3 sm:py-4 font-mono text-xs text-gray-500">{itemNumber}</td>
+      <td className="px-4 sm:px-6 py-3 sm:py-4 font-semibold text-gray-900 text-sm">{productName}</td>
+      <td className="px-4 sm:px-6 py-3 sm:py-4">
         <div className="flex justify-center">
           <div className={`w-8 h-8 rounded-full border-2 flex items-center justify-center text-[10px] font-bold ${scoreColor(score)}`}>
             {score}
           </div>
         </div>
       </td>
-      <td className="px-6 py-4">
+      <td className="px-4 sm:px-6 py-3 sm:py-4">
         <VerdictBadge verdict={verdict} />
       </td>
-      <td className="px-6 py-4 text-right">
+      <td className="px-4 sm:px-6 py-3 sm:py-4 text-right">
         <button
           onClick={onViewDetails}
           className="inline-flex items-center gap-1 text-xs font-bold text-[#004990] hover:bg-blue-50 px-3 py-1.5 rounded transition-all"

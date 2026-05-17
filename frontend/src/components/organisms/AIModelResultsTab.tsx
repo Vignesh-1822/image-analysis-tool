@@ -23,7 +23,7 @@ export function AIModelResultsTab({ result }: AIModelResultsTabProps) {
     <div className="flex flex-col gap-6 pt-2">
 
       {/* Upper: ring left, cards right */}
-      <div className="grid grid-cols-2 gap-5">
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
         <div className="flex flex-col items-center justify-center bg-gray-50 py-8 px-4">
           <ConfidenceRing
             score={result.composite_score}

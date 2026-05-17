@@ -57,7 +57,7 @@ export function YoloResultsTab({ result, segmentedImage }: YoloResultsTabProps) 
     <div className="flex flex-col gap-6 pt-2">
 
       {/* Upper: ring left, cards right */}
-      <div className="grid grid-cols-2 gap-5">
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
         <div className="flex flex-col items-center justify-center bg-gray-50 py-8 px-4 rounded-xl border border-gray-100">
           <ConfidenceRing
             score={result.composite_score}
@@ -130,7 +130,7 @@ export function YoloResultsTab({ result, segmentedImage }: YoloResultsTabProps) 
         <p className="text-[10px] font-bold uppercase tracking-widest text-gray-400 mb-3">
           Detection Details
         </p>
-        <div className="grid grid-cols-4 gap-3">
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
           <div className="flex flex-col items-center justify-center p-4 bg-white border border-gray-200 rounded-lg shadow-sm">
             <span className="text-lg font-bold text-gray-800">{result.class_name || '—'}</span>
             <span className="text-[10px] font-bold uppercase tracking-widest text-gray-400 mt-1">YOLO Class</span>

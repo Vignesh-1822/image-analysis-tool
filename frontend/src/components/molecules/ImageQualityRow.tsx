@@ -48,7 +48,7 @@ function framingInfo(framing: QualityResult['framing']): string {
 export function ImageQualityRow({ quality }: ImageQualityRowProps) {
   const { width, height } = quality.resolution
   return (
-    <div className="flex gap-3">
+    <div className="grid grid-cols-3 sm:grid-cols-5 gap-2 sm:gap-3">
       <QualityMetricCard
         label="Sharpness"
         value={quality.blur.label}

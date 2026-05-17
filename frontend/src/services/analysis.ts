@@ -1,6 +1,5 @@
 import type { AIModelAnalysisResult, CLIPAnalysisResult, CombinedAnalysisResult, ParsedDescription } from '@/types/analysis'
-
-const BASE_URL = 'http://localhost:8000'
+import { authFetch } from '@/lib/api'
 
 export async function analyzeWithClip(
   file: File,
@@ -10,10 +9,7 @@ export async function analyzeWithClip(
   form.append('file', file)
   form.append('description', description)
 
-  const res = await fetch(`${BASE_URL}/api/analyze/clip`, {
-    method: 'POST',
-    body: form,
-  })
+  const res = await authFetch('/api/analyze/clip', { method: 'POST', body: form })
 
   if (!res.ok) {
     const err = await res.json().catch(() => ({ detail: 'Unknown error' }))
@@ -31,10 +27,7 @@ export async function analyzeWithAI(
   form.append('file', file)
   form.append('description', description)
 
-  const res = await fetch(`${BASE_URL}/api/analyze/ai-model`, {
-    method: 'POST',
-    body: form,
-  })
+  const res = await authFetch('/api/analyze/ai-model', { method: 'POST', body: form })
 
   if (!res.ok) {
     const err = await res.json().catch(() => ({ detail: 'Unknown error' }))
@@ -45,10 +38,7 @@ export async function analyzeWithAI(
 }
 
 export async function analyzeByIdentifier(identifier: string, signal?: AbortSignal): Promise<CombinedAnalysisResult> {
-  const res = await fetch(`${BASE_URL}/api/analyze/${encodeURIComponent(identifier)}`, {
-    method: 'POST',
-    signal,
-  })
+  const res = await authFetch(`/api/analyze/${encodeURIComponent(identifier)}`, { method: 'POST', signal })
 
   if (!res.ok) {
     const err = await res.json().catch(() => ({ detail: 'Unknown error' }))
@@ -62,7 +52,7 @@ export async function insertSku(
   lightData: Record<string, unknown>,
   fullData: Record<string, unknown>
 ): Promise<{ message: string; item_number: string; sku_id: string; primary_color: string; hierarchy: string; image_link: string }> {
-  const res = await fetch(`${BASE_URL}/api/admin/insert-sku`, {
+  const res = await authFetch('/api/admin/insert-sku', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ light_data: lightData, full_data: fullData }),
@@ -81,7 +71,7 @@ export async function insertSku(
 }
 
 export async function parseDescription(description: string): Promise<ParsedDescription> {
-  const res = await fetch(`${BASE_URL}/api/parse-description`, {
+  const res = await authFetch('/api/parse-description', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ description }),

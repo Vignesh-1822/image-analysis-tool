@@ -57,8 +57,8 @@ export function AdminProductIntake() {
   return (
     <div className="min-h-screen bg-white">
       <Navbar />
-      <main className="max-w-7xl mx-auto px-8 py-8 space-y-8">
-        <h1 className="text-4xl font-extrabold text-[#004990]">Insert Product</h1>
+      <main className="max-w-7xl mx-auto px-4 sm:px-8 py-4 sm:py-8 space-y-8">
+        <h1 className="text-2xl sm:text-4xl font-extrabold text-[#004990]">Insert Product</h1>
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 pb-4">
           <JsonEditorPanel

@@ -16,22 +16,22 @@ interface ResultsTabsProps {
 export function ResultsTabs({ clipResult, aiResult, segmentedImage, yoloResult, isLoading = false }: ResultsTabsProps) {
   return (
     <Tabs defaultValue="clip">
-      <TabsList className="rounded-xl bg-gray-100 h-10 p-1 gap-1">
+      <TabsList className="rounded-xl bg-gray-100 h-10 p-1 gap-1 w-full sm:w-auto">
         <TabsTrigger
           value="clip"
-          className="rounded-lg text-xs font-semibold uppercase tracking-wider h-full px-5 data-[state=active]:bg-[#004990] data-[state=active]:text-white data-[state=active]:shadow-sm"
+          className="flex-1 sm:flex-none rounded-lg text-xs font-semibold uppercase tracking-wider h-full px-3 sm:px-5 data-[state=active]:bg-[#004990] data-[state=active]:text-white data-[state=active]:shadow-sm"
         >
           CLIP Model
         </TabsTrigger>
         <TabsTrigger
           value="ai"
-          className="rounded-lg text-xs font-semibold uppercase tracking-wider h-full px-5 data-[state=active]:bg-[#004990] data-[state=active]:text-white data-[state=active]:shadow-sm"
+          className="flex-1 sm:flex-none rounded-lg text-xs font-semibold uppercase tracking-wider h-full px-3 sm:px-5 data-[state=active]:bg-[#004990] data-[state=active]:text-white data-[state=active]:shadow-sm"
         >
           AI API
         </TabsTrigger>
         <TabsTrigger
           value="yolo"
-          className="rounded-lg text-xs font-semibold uppercase tracking-wider h-full px-5 data-[state=active]:bg-[#004990] data-[state=active]:text-white data-[state=active]:shadow-sm"
+          className="flex-1 sm:flex-none rounded-lg text-xs font-semibold uppercase tracking-wider h-full px-3 sm:px-5 data-[state=active]:bg-[#004990] data-[state=active]:text-white data-[state=active]:shadow-sm"
         >
           YOLO+SAM2
         </TabsTrigger>

@@ -1,0 +1,21 @@
+services:
+  - type: web
+    name: image-analysis-backend
+    runtime: docker
+    dockerfilePath: ./backend/Dockerfile
+    dockerContext: ./backend
+    plan: standard
+    healthCheckPath: /health
+    envVars:
+      - key: DATABASE_URL
+        sync: false
+      - key: OPENAI_API_KEY
+        sync: false
+      - key: APP_PASSWORD_HASH
+        sync: false
+      - key: JWT_SECRET
+        sync: false
+      - key: JWT_EXPIRE_HOURS
+        value: "8"
+      - key: ALLOWED_ORIGINS
+        value: "*"

@@ -46,11 +46,11 @@ export function SKUResults() {
     <div className="min-h-screen bg-gray-50 flex flex-col">
       <Navbar />
 
-      <main className="flex-1 max-w-7xl w-full mx-auto px-8 py-10">
-        <div className="flex items-baseline justify-between mb-6">
-          <h1 className="text-3xl font-bold text-[#004990]">Validation Report</h1>
+      <main className="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-8 py-6 sm:py-10">
+        <div className="flex flex-col sm:flex-row sm:items-baseline sm:justify-between gap-2 mb-4 sm:mb-6">
+          <h1 className="text-2xl sm:text-3xl font-bold text-[#004990]">Validation Report</h1>
           {identifier && (
-            <span className="text-xs font-mono text-gray-400 bg-gray-100 px-3 py-1 rounded-full">
+            <span className="text-xs font-mono text-gray-400 bg-gray-100 px-3 py-1 rounded-full self-start sm:self-auto">
               {identifier}
             </span>
           )}
@@ -71,19 +71,19 @@ export function SKUResults() {
         )}
 
         {result && !isLoading && (
-          <div className="grid grid-cols-5 gap-8 items-start">
-            <div className="col-span-2">
+          <div className="grid grid-cols-1 lg:grid-cols-5 gap-6 lg:gap-8 items-start">
+            <div className="col-span-1 lg:col-span-2">
               <SKUResultsPanel
                 result={result}
                 refId={refId}
                 onSearchNew={() => navigate('/')}
               />
             </div>
-            <div className="col-span-3">
-              <ResultsTabs 
-                clipResult={result.clip} 
-                aiResult={result.ai} 
-                segmentedImage={result.segmented_image_base64} 
+            <div className="col-span-1 lg:col-span-3">
+              <ResultsTabs
+                clipResult={result.clip}
+                aiResult={result.ai}
+                segmentedImage={result.segmented_image_base64}
                 yoloResult={result.yolo}
               />
             </div>

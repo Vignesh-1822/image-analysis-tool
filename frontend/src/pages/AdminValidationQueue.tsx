@@ -23,11 +23,11 @@ export function AdminValidationQueue() {
   return (
     <div className="min-h-screen bg-white">
       <Navbar />
-      <main className="max-w-7xl mx-auto px-8 py-12 space-y-10">
-        <header className="flex justify-between items-end border-b border-gray-200 pb-6">
+      <main className="max-w-7xl mx-auto px-4 sm:px-8 py-6 sm:py-12 space-y-6 sm:space-y-10">
+        <header className="flex flex-col sm:flex-row sm:justify-between sm:items-end border-b border-gray-200 pb-4 sm:pb-6 gap-4">
           <div>
             <p className="text-xs font-bold text-[#004990] tracking-widest uppercase mb-2">System Diagnostics</p>
-            <h1 className="text-4xl font-extrabold text-gray-900 tracking-tight">Failed Validations Queue</h1>
+            <h1 className="text-2xl sm:text-4xl font-extrabold text-gray-900 tracking-tight">Failed Validations Queue</h1>
           </div>
           <div className="flex gap-4 items-center">
             <QueueStatCard label="Total Flagged" value="1,284" />
